@@ -953,7 +953,6 @@
                         <div>← →: Pan to older/newer data</div>
                         <div>Home: Go to latest data</div>
                         <div>End: Go to earliest data</div>
-                        <div>Mouse wheel: Zoom</div>
                         <div>Ctrl/Shift+Mouse wheel: Adjust visible points</div>
                         <div>Page Up/Down: Adjust visible points</div>
                         <div>Drag left/right: Pan through time</div>
@@ -1637,10 +1636,10 @@
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Apply zoom and pan transformations
+            // Apply pan transformations only (zoom disabled)
             ctx.save();
             ctx.translate(panOffsetX, panOffsetY);
-            ctx.scale(zoomLevel, zoomLevel);
+            // ctx.scale(zoomLevel, zoomLevel); // Disabled zoom scaling
             
             const chartType = document.getElementById('chartType').value;
             
@@ -2956,7 +2955,13 @@
             canvas.addEventListener('mousedown', handleMouseDown);
             canvas.addEventListener('mousemove', handleMouseMove);
             canvas.addEventListener('mouseup', handleMouseUp);
-            canvas.addEventListener('wheel', handleWheel);
+            // Add wheel event listener that only works with modifier keys
+            canvas.addEventListener('wheel', (e) => {
+                if (e.ctrlKey || e.metaKey || e.shiftKey) {
+                    handleWheel(e);
+                }
+                // Do nothing for normal scroll - allow page scrolling
+            });
             canvas.addEventListener('mouseleave', handleMouseLeave);
             
             // Touch events for mobile
@@ -3027,17 +3032,17 @@
         }
         
         function handleWheel(e) {
-            e.preventDefault();
-            
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            
-            const mouseX = (e.clientX - rect.left) * scaleX;
-            const mouseY = (e.clientY - rect.top) * scaleY;
-            
-            // Check if Ctrl/Cmd or Shift key is held for max visible points adjustment
+            // Only handle scroll with modifier keys (Ctrl/Shift)
             if (e.ctrlKey || e.metaKey || e.shiftKey) {
+                e.preventDefault();
+                
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                
+                const mouseX = (e.clientX - rect.left) * scaleX;
+                const mouseY = (e.clientY - rect.top) * scaleY;
+                
                 // Adjust max visible points with scroll
                 const currentMaxPoints = parseInt(document.getElementById('maxVisiblePoints').value);
                 const step = 10; // Adjust by 10 points per scroll
@@ -3048,19 +3053,8 @@
                 // Update the slider and trigger the update function
                 document.getElementById('maxVisiblePoints').value = newMaxPoints;
                 updateMaxVisiblePoints();
-            } else {
-                // Normal zoom behavior
-                const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-                const newZoomLevel = Math.max(0.1, Math.min(10, zoomLevel * zoomFactor));
-                
-                // Zoom towards mouse position
-                const zoomRatio = newZoomLevel / zoomLevel;
-                panOffsetX = mouseX - (mouseX - panOffsetX) * zoomRatio;
-                panOffsetY = mouseY - (mouseY - panOffsetY) * zoomRatio;
-                
-                zoomLevel = newZoomLevel;
-                redrawChart();
             }
+            // Do not prevent default when no modifier keys - allow normal page scrolling
         }
         
         function handleMouseLeave(e) {
@@ -3130,9 +3124,9 @@
             const displayData = visibleData.slice(visibleStartIndex, visibleEndIndex + 1);
             if (displayData.length === 0) return -1;
             
-            // Transform mouse coordinates to account for zoom and pan
-            const transformedX = (mouseX - panOffsetX) / zoomLevel;
-            const transformedY = (mouseY - panOffsetY) / zoomLevel;
+            // Transform mouse coordinates to account for pan only (zoom disabled)
+            const transformedX = mouseX - panOffsetX;
+            const transformedY = mouseY - panOffsetY;
             
             // Check if mouse is within chart area
             if (transformedX < chartArea.x || transformedX > chartArea.x + chartArea.width ||
@@ -3391,8 +3385,8 @@
             const visibleData = filteredData.filter(d => d.visible);
             if (visibleData.length === 0) return;
             
-            // Adjust maxVisiblePoints based on zoom level
-            const adjustedMaxPoints = Math.max(10, Math.floor(maxVisiblePoints / zoomLevel));
+            // Use maxVisiblePoints directly without zoom level adjustment
+            const adjustedMaxPoints = maxVisiblePoints;
             
             // Ensure visible range is within bounds
             visibleStartIndex = Math.max(0, Math.min(visibleStartIndex, visibleData.length - 1));
@@ -3468,8 +3462,8 @@
             const visibleData = filteredData.filter(d => d.visible);
             if (visibleData.length === 0) return;
             
-            // Adjust maxVisiblePoints based on zoom level
-            const adjustedMaxPoints = Math.max(10, Math.floor(maxVisiblePoints / zoomLevel));
+            // Use maxVisiblePoints directly without zoom level adjustment
+            const adjustedMaxPoints = maxVisiblePoints;
             
             // Keep the current end index but adjust start index to fit new max points
             const currentRangeSize = visibleEndIndex - visibleStartIndex + 1;
@@ -3530,7 +3524,16 @@
         }
         
         function debugChart() {
-            // Debug chart function - can be used for debugging if needed
+            console.log('Chart Debug Info:');
+            console.log('Total data:', stockData.length);
+            console.log('Filtered data:', filteredData.length);
+            console.log('Visible data:', filteredData.filter(d => d.visible).length);
+            console.log('Visible range:', visibleStartIndex, 'to', visibleEndIndex);
+            console.log('Max visible points:', maxVisiblePoints);
+            console.log('Zoom level:', zoomLevel);
+            console.log('Pan offset:', panOffsetX, panOffsetY);
+            console.log('Chart area:', chartArea);
+            console.log('Canvas size:', canvas.width, canvas.height);
         }
         
         // Initialize when page loads
@@ -3621,8 +3624,8 @@
             const visibleData = filteredData.filter(d => d.visible);
             if (visibleData.length === 0) return;
             
-            // Adjust maxVisiblePoints based on zoom level
-            const adjustedMaxPoints = Math.max(10, Math.floor(maxVisiblePoints / zoomLevel));
+            // Use maxVisiblePoints directly without zoom level adjustment
+            const adjustedMaxPoints = maxVisiblePoints;
             
             // Keep the current end index but adjust start index to fit new max points
             const currentRangeSize = visibleEndIndex - visibleStartIndex + 1;
