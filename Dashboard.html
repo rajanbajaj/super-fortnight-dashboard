@@ -318,6 +318,15 @@
                     <option value="3">Cluster 3</option>
                 </select>
             </div>
+            
+            <div class="control-group">
+                <label for="candleTypeFilter">Filter by Candle Type:</label>
+                <select id="candleTypeFilter" onchange="updateChart()">
+                    <option value="all">All Candles</option>
+                    <option value="bullish">Bullish (Green)</option>
+                    <option value="bearish">Bearish (Red)</option>
+                </select>
+            </div>
         </div>
         
         <div class="legend" id="legend"></div>
@@ -615,6 +624,7 @@
         function filterData() {
             const numRows = parseInt(document.getElementById('numRows').value);
             const clusterFilter = document.getElementById('clusterFilter').value;
+            const candleTypeFilter = document.getElementById('candleTypeFilter').value;
             
             let filtered = [...stockData];
             
@@ -627,6 +637,15 @@
             if (clusterFilter !== 'all') {
                 const cluster = parseInt(clusterFilter);
                 filtered = filtered.filter(d => d.predicted_cluster === cluster);
+            }
+            
+            // Filter by candle type (bullish/bearish)
+            if (candleTypeFilter !== 'all') {
+                if (candleTypeFilter === 'bullish') {
+                    filtered = filtered.filter(d => d.close > d.open);
+                } else if (candleTypeFilter === 'bearish') {
+                    filtered = filtered.filter(d => d.close < d.open);
+                }
             }
             
             filteredData = filtered;
@@ -1124,6 +1143,20 @@
                 `;
                 legend.appendChild(item);
             });
+            
+            // Add candle type information if filter is applied
+            const candleTypeFilter = document.getElementById('candleTypeFilter').value;
+            if (candleTypeFilter !== 'all') {
+                const candleTypeItem = document.createElement('div');
+                candleTypeItem.className = 'legend-item';
+                const candleTypeColor = candleTypeFilter === 'bullish' ? '#00ff88' : '#ff6b6b';
+                const candleTypeLabel = candleTypeFilter === 'bullish' ? 'Bullish' : 'Bearish';
+                candleTypeItem.innerHTML = `
+                    <div class="legend-color" style="background-color: ${candleTypeColor}"></div>
+                    <span>${candleTypeLabel} Candles Only</span>
+                `;
+                legend.appendChild(candleTypeItem);
+            }
         }
         
         function updateStats() {
@@ -1146,6 +1179,11 @@
                 const cluster = d.predicted_cluster || 0;
                 clusterCounts[cluster] = (clusterCounts[cluster] || 0) + 1;
             });
+            
+            // Calculate bullish and bearish candle counts
+            const bullishCount = filteredData.filter(d => d.close > d.open).length;
+            const bearishCount = filteredData.filter(d => d.close < d.open).length;
+            const dojiCount = filteredData.filter(d => d.close === d.open).length;
             
             const statsHtml = `
                 <div class="stat-card">
@@ -1171,6 +1209,18 @@
                 <div class="stat-card">
                     <div class="stat-value">${Object.keys(clusterCounts).length}</div>
                     <div class="stat-label">Active Clusters</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: #00ff88">${bullishCount}</div>
+                    <div class="stat-label">Bullish Candles</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: #ff6b6b">${bearishCount}</div>
+                    <div class="stat-label">Bearish Candles</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: #ffe66d">${dojiCount}</div>
+                    <div class="stat-label">Doji Candles</div>
                 </div>
             `;
             

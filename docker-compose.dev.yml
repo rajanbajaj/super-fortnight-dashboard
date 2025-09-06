@@ -2,10 +2,11 @@ version: "3.8"
 
 services:
   dashboard:
-    build: .
-    container_name: dashboard-container
+    image: nginx:alpine
+    container_name: dashboard-container-dev
     ports:
       - "9090:80"
     restart: unless-stopped
     volumes:
       - ./Dashboard.html:/usr/share/nginx/html/index.html:ro
+    command: ["nginx", "-g", "daemon off;"]
