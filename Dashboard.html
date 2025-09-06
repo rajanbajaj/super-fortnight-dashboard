@@ -53,6 +53,10 @@
                 max-height: 150px;
             }
             
+            .settings-container {
+                margin-bottom: 15px;
+            }
+            
             .overlay-settings-panel {
                 left: 10px;
                 right: 10px;
@@ -418,10 +422,14 @@
             border-color: #00ff88;
         }
         
+        .settings-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
         .overlay-settings {
-            position: absolute;
-            top: 20px;
-            left: 20px;
             background: rgba(0, 0, 0, 0.8);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 6px;
@@ -442,7 +450,7 @@
         .overlay-settings-panel {
             position: absolute;
             top: 40px;
-            left: 20px;
+            right: 0;
             background: rgba(0, 0, 0, 0.9);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 8px;
@@ -608,25 +616,6 @@
             flex-shrink: 0;
         }
         
-        .overlay-toggle {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 6px;
-            padding: 8px 12px;
-            color: white;
-            font-size: 12px;
-            cursor: pointer;
-            backdrop-filter: blur(10px);
-            transition: all 0.2s ease;
-        }
-        
-        .overlay-toggle:hover {
-            background: rgba(0, 0, 0, 0.9);
-            border-color: #00ff88;
-        }
         
         .overlay-hidden {
             display: none;
@@ -864,68 +853,70 @@
             <div class="stats-content" id="stats"></div>
         </div>
         
+        <!-- Settings Container (Outside Chart) -->
+        <div class="settings-container">
+            <!-- Settings Button -->
+            <div class="overlay-settings" onclick="toggleSettings()">⚙️ Settings</div>
+            
+            <!-- Settings Panel -->
+            <div class="overlay-settings-panel hidden" id="overlaySettingsPanel">
+                <div class="overlay-settings-group">
+                    <label>Panel Opacity</label>
+                    <input type="range" id="panelOpacity" min="0.3" max="1" step="0.1" value="0.8" onchange="updatePanelOpacity()">
+                    <div class="overlay-settings-value" id="opacityValue">80%</div>
+                </div>
+                
+                <div class="overlay-settings-group">
+                    <label style="font-weight: 600; color: #00ff88; margin-bottom: 8px;">Panel Visibility</label>
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                        <button class="overlay-panel-btn" onclick="selectAllPanels()" style="font-size: 9px; padding: 2px 6px;">All</button>
+                        <button class="overlay-panel-btn" onclick="deselectAllPanels()" style="font-size: 9px; padding: 2px 6px;">None</button>
+                    </div>
+                    <div class="panel-visibility-grid">
+                        <label class="panel-checkbox">
+                            <input type="checkbox" id="showChartPanel" checked onchange="updatePanelVisibility()">
+                            📊 Chart
+                        </label>
+                        <label class="panel-checkbox">
+                            <input type="checkbox" id="showFiltersPanel" checked onchange="updatePanelVisibility()">
+                            🔍 Filters
+                        </label>
+                        <label class="panel-checkbox">
+                            <input type="checkbox" id="showColorsPanel" checked onchange="updatePanelVisibility()">
+                            🎨 Colors
+                        </label>
+                        <label class="panel-checkbox">
+                            <input type="checkbox" id="showStatsPanel" checked onchange="updatePanelVisibility()">
+                            📈 Stats
+                        </label>
+                        <label class="panel-checkbox">
+                            <input type="checkbox" id="showLegendPanel" checked onchange="updatePanelVisibility()">
+                            📊 Legend
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="overlay-settings-group">
+                    <label>
+                        <input type="checkbox" id="autoMinimize" onchange="updateAutoMinimize()">
+                        Auto Minimize Panels
+                    </label>
+                </div>
+                <div class="overlay-settings-group">
+                    <label>
+                        <input type="checkbox" id="showMinimizeButtons" checked onchange="updateMinimizeButtons()">
+                        Show Minimize Buttons
+                    </label>
+                </div>
+            </div>
+        </div>
+        
         <div class="chart-container">
             <canvas id="candlestickChart"></canvas>
             
             <!-- Chart Overlay -->
             <div class="chart-overlay">
-                <!-- Settings Button (Top Right) -->
-                <div class="overlay-settings" onclick="toggleSettings()">⚙️ Settings</div>
                 
-                <!-- Settings Panel (Top Right) -->
-                <div class="overlay-settings-panel hidden" id="overlaySettingsPanel">
-                    <div class="overlay-settings-group">
-                        <label>Panel Opacity</label>
-                        <input type="range" id="panelOpacity" min="0.3" max="1" step="0.1" value="0.8" onchange="updatePanelOpacity()">
-                        <div class="overlay-settings-value" id="opacityValue">80%</div>
-                    </div>
-                    
-                    <div class="overlay-settings-group">
-                        <label style="font-weight: 600; color: #00ff88; margin-bottom: 8px;">Panel Visibility</label>
-                        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                            <button class="overlay-panel-btn" onclick="selectAllPanels()" style="font-size: 9px; padding: 2px 6px;">All</button>
-                            <button class="overlay-panel-btn" onclick="deselectAllPanels()" style="font-size: 9px; padding: 2px 6px;">None</button>
-                        </div>
-                        <div class="panel-visibility-grid">
-                            <label class="panel-checkbox">
-                                <input type="checkbox" id="showChartPanel" checked onchange="updatePanelVisibility()">
-                                📊 Chart
-                            </label>
-                            <label class="panel-checkbox">
-                                <input type="checkbox" id="showFiltersPanel" checked onchange="updatePanelVisibility()">
-                                🔍 Filters
-                            </label>
-                            <label class="panel-checkbox">
-                                <input type="checkbox" id="showColorsPanel" checked onchange="updatePanelVisibility()">
-                                🎨 Colors
-                            </label>
-                            <label class="panel-checkbox">
-                                <input type="checkbox" id="showStatsPanel" checked onchange="updatePanelVisibility()">
-                                📈 Stats
-                            </label>
-                            <label class="panel-checkbox">
-                                <input type="checkbox" id="showLegendPanel" checked onchange="updatePanelVisibility()">
-                                📊 Legend
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div class="overlay-settings-group">
-                        <label>
-                            <input type="checkbox" id="autoMinimize" onchange="updateAutoMinimize()">
-                            Auto Minimize Panels
-                        </label>
-                    </div>
-                    <div class="overlay-settings-group">
-                        <label>
-                            <input type="checkbox" id="showMinimizeButtons" checked onchange="updateMinimizeButtons()">
-                            Show Minimize Buttons
-                        </label>
-                    </div>
-                </div>
-                
-                <!-- Toggle Button -->
-                <button class="overlay-toggle" onclick="toggleOverlay()">⚙️ Controls</button>
                 
                 <!-- All Panels on Left Side -->
                 <div class="overlay-left" id="overlayLeft">
@@ -2440,19 +2431,6 @@
             statsContainer.innerHTML = statsHtml;
         }
         
-        // Overlay toggle functionality
-        function toggleOverlay() {
-            const leftPanel = document.getElementById('overlayLeft');
-            const toggle = document.querySelector('.overlay-toggle');
-            
-            if (leftPanel.classList.contains('overlay-hidden')) {
-                leftPanel.classList.remove('overlay-hidden');
-                toggle.textContent = '⚙️ Controls';
-            } else {
-                leftPanel.classList.add('overlay-hidden');
-                toggle.textContent = '⚙️ Show';
-            }
-        }
         
         // Settings panel toggle
         function toggleSettings() {
@@ -2546,10 +2524,9 @@
                 }
             });
             
-            // Update left panel section visibility
+            // Left panel is always visible (no toggle button)
             const leftPanel = document.getElementById('overlayLeft');
-            const anyPanelVisible = Object.values(panels).some(visible => visible);
-            leftPanel.style.display = anyPanelVisible ? 'flex' : 'none';
+            leftPanel.style.display = 'flex';
         }
         
         // Select all panels
