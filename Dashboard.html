@@ -58,6 +58,7 @@
             }
             
             .overlay-settings-panel {
+                top: 60px;
                 left: 10px;
                 right: 10px;
                 min-width: auto;
@@ -325,6 +326,15 @@
             gap: 20px;
         }
         
+        .overlay-top-right {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
         .overlay-bottom {
             position: absolute;
             bottom: 20px;
@@ -447,10 +457,15 @@
             border-color: #00ff88;
         }
         
+        .overlay-settings[onclick="toggleFullscreen()"]:hover {
+            background: rgba(0, 0, 0, 0.9);
+            border-color: #0096ff;
+        }
+        
         .overlay-settings-panel {
             position: absolute;
-            top: 40px;
-            right: 0;
+            top: 60px;
+            right: 20px;
             background: rgba(0, 0, 0, 0.9);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 8px;
@@ -858,140 +873,102 @@
             <div class="stats-content" id="stats"></div>
         </div>
         
-        <!-- Settings Container (Outside Chart) -->
-        <div class="settings-container">
-            <!-- Settings Button -->
-            <div class="overlay-settings" onclick="toggleSettings()">⚙️ Settings</div>
-            <!-- Reset Button -->
-            <div class="overlay-settings" onclick="resetChartToDefault()" style="margin-left: 10px;">🔄 Reset</div>
-            
-            <!-- Settings Panel -->
-            <div class="overlay-settings-panel hidden" id="overlaySettingsPanel">
-                <div class="overlay-settings-group">
-                    <label>Panel Opacity</label>
-                    <input type="range" id="panelOpacity" min="0.3" max="1" step="0.1" value="0.8" onchange="updatePanelOpacity()">
-                    <div class="overlay-settings-value" id="opacityValue">80%</div>
-                </div>
-                
-                <div class="overlay-settings-group">
-                    <label style="font-weight: 600; color: #00ff88; margin-bottom: 8px;">Panel Visibility</label>
-                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                        <button class="overlay-panel-btn" onclick="selectAllPanels()" style="font-size: 9px; padding: 2px 6px;">All</button>
-                        <button class="overlay-panel-btn" onclick="deselectAllPanels()" style="font-size: 9px; padding: 2px 6px;">None</button>
-                    </div>
-                    <div class="panel-visibility-grid">
-                        <label class="panel-checkbox">
-                            <input type="checkbox" id="showChartPanel" checked onchange="updatePanelVisibility()">
-                            📊 Chart
-                        </label>
-                        <label class="panel-checkbox">
-                            <input type="checkbox" id="showFiltersPanel" checked onchange="updatePanelVisibility()">
-                            🔍 Filters
-                        </label>
-                        <label class="panel-checkbox">
-                            <input type="checkbox" id="showColorsPanel" checked onchange="updatePanelVisibility()">
-                            🎨 Colors
-                        </label>
-                        <label class="panel-checkbox">
-                            <input type="checkbox" id="showStatsPanel" checked onchange="updatePanelVisibility()">
-                            📈 Stats
-                        </label>
-                        <label class="panel-checkbox">
-                            <input type="checkbox" id="showLegendPanel" checked onchange="updatePanelVisibility()">
-                            📊 Legend
-                        </label>
-                    </div>
-                </div>
-                
-                <div class="overlay-settings-group">
-                    <label>
-                        <input type="checkbox" id="autoMinimize" onchange="updateAutoMinimize()">
-                        Auto Minimize Panels
-                    </label>
-                </div>
-                <div class="overlay-settings-group">
-                    <label>
-                        <input type="checkbox" id="showMinimizeButtons" checked onchange="updateMinimizeButtons()">
-                        Show Minimize Buttons
-                    </label>
-                </div>
-                
-                <div class="overlay-settings-group">
-                    <button class="overlay-panel-btn" onclick="resetZoom()" style="width: 100%; padding: 8px; font-size: 12px;">
-                        🔄 Reset Zoom
-                    </button>
-                </div>
-                
-                <div class="overlay-settings-group">
-                    <button class="overlay-panel-btn" onclick="resetVisibleRange()" style="width: 100%; padding: 8px; font-size: 12px;">
-                        📊 Go to Latest Data
-                    </button>
-                </div>
-                
-                <div class="overlay-settings-group">
-                    <button class="overlay-panel-btn" onclick="panToMiddle()" style="width: 100%; padding: 8px; font-size: 12px;">
-                        🎯 Go to Middle
-                    </button>
-                </div>
-                
-                <div class="overlay-settings-group">
-                    <label>Max Visible Points</label>
-                    <input type="range" id="maxVisiblePoints" min="10" max="200" step="10" value="50" onchange="updateMaxVisiblePoints()">
-                    <div class="overlay-settings-value" id="maxVisiblePointsValue">50</div>
-                </div>
-                
-                <div class="overlay-settings-group">
-                    <label>Panning Sensitivity</label>
-                    <input type="range" id="panningSensitivity" min="0.1" max="5" step="0.1" value="1" onchange="updatePanningSensitivity()">
-                    <div class="overlay-settings-value" id="panningSensitivityValue">1.0</div>
-                </div>
-                
-                <div class="overlay-settings-group">
-                    <label style="font-weight: 600; color: #00ff88; margin-bottom: 8px;">Keyboard Shortcuts</label>
-                    <div style="font-size: 10px; color: #ccc; line-height: 1.4;">
-                        <div>1-4: Set visible points (20, 50, 100, 200)</div>
-                        <div>← →: Pan to older/newer data</div>
-                        <div>Home: Go to latest data</div>
-                        <div>End: Go to earliest data</div>
-                        <div>Ctrl/Shift+Mouse wheel: Adjust visible points</div>
-                        <div>Page Up/Down: Adjust visible points</div>
-                        <div>Drag left/right: Pan through time</div>
-                        <div>+/-: Increase/decrease panning sensitivity</div>
-                        <div>R: Reset chart to default</div>
-                        <div>C: Toggle crosshair on/off</div>
-                        <div>S: Toggle crosshair snap to candles</div>
-                    </div>
-                </div>
-                
-                <div class="overlay-settings-group">
-                    <button class="overlay-panel-btn" onclick="debugChart()" style="width: 100%; padding: 8px; font-size: 12px;">
-                        🐛 Debug Chart
-                    </button>
-                </div>
-                
-                <div class="overlay-settings-group">
-                    <label style="font-weight: 600; color: #00ff88; margin-bottom: 8px;">Settings Management</label>
-                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                        <button class="overlay-panel-btn" onclick="saveSettingsWithNotification()" style="flex: 1; padding: 6px; font-size: 11px;">
-                            💾 Save
-                        </button>
-                        <button class="overlay-panel-btn" onclick="loadSettings()" style="flex: 1; padding: 6px; font-size: 11px;">
-                            📂 Load
-                        </button>
-                        <button class="overlay-panel-btn" onclick="clearSettings()" style="flex: 1; padding: 6px; font-size: 11px;">
-                            🗑️ Clear
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
         
         <div class="chart-container">
             <canvas id="candlestickChart"></canvas>
             
             <!-- Chart Overlay -->
             <div class="chart-overlay">
+                <!-- Settings Buttons (Top Right) -->
+                <div class="overlay-top-right">
+                    <div class="overlay-settings" onclick="toggleSettings()">⚙️ Settings</div>
+                    <div class="overlay-settings" onclick="resetChartToDefault()" style="margin-left: 10px;">🔄 Reset</div>
+                    <div class="overlay-settings" onclick="toggleFullscreen()" style="margin-left: 10px;">⛶ Fullscreen</div>
+                </div>
                 
+                <!-- Settings Panel (Inside Chart) -->
+                <div class="overlay-settings-panel hidden" id="overlaySettingsPanel">
+                    <div class="overlay-settings-group">
+                        <label>Panel Opacity</label>
+                        <input type="range" id="panelOpacity" min="0.3" max="1" step="0.1" value="0.8" onchange="updatePanelOpacity()">
+                        <div class="overlay-settings-value" id="opacityValue">80%</div>
+                    </div>
+                    
+                    <div class="overlay-settings-group">
+                        <label>Show Panels</label>
+                        <div class="overlay-settings-checkbox">
+                            <input type="checkbox" id="showChartPanel" checked onchange="updatePanelVisibility()">
+                            <label for="showChartPanel">Chart</label>
+                        </div>
+                        <div class="overlay-settings-checkbox">
+                            <input type="checkbox" id="showFiltersPanel" checked onchange="updatePanelVisibility()">
+                            <label for="showFiltersPanel">Filters</label>
+                        </div>
+                        <div class="overlay-settings-checkbox">
+                            <input type="checkbox" id="showColorsPanel" checked onchange="updatePanelVisibility()">
+                            <label for="showColorsPanel">Colors</label>
+                        </div>
+                        <div class="overlay-settings-checkbox">
+                            <input type="checkbox" id="showStatsPanel" checked onchange="updatePanelVisibility()">
+                            <label for="showStatsPanel">Stats</label>
+                        </div>
+                        <div class="overlay-settings-checkbox">
+                            <input type="checkbox" id="showLegendPanel" checked onchange="updatePanelVisibility()">
+                            <label for="showLegendPanel">Legend</label>
+                        </div>
+                    </div>
+                    
+                    <div class="overlay-settings-group">
+                        <label>Max Visible Points</label>
+                        <input type="range" id="maxVisiblePoints" min="10" max="200" value="50" onchange="updateMaxVisiblePoints()">
+                        <div class="overlay-settings-value" id="maxVisiblePointsValue">50</div>
+                    </div>
+                    
+                    <div class="overlay-settings-group">
+                        <label>Panning Sensitivity</label>
+                        <input type="range" id="panningSensitivity" min="0.1" max="5" step="0.1" value="1.0" onchange="updatePanningSensitivity()">
+                        <div class="overlay-settings-value" id="panningSensitivityValue">1.0</div>
+                    </div>
+                    
+                    <div class="overlay-settings-group">
+                        <label style="font-weight: 600; color: #00ff88; margin-bottom: 8px;">Keyboard Shortcuts</label>
+                        <div style="font-size: 11px; line-height: 1.4; color: #ccc;">
+                            <div>Arrow Keys: Pan through data</div>
+                            <div>Home: Go to latest data</div>
+                            <div>End: Go to earliest data</div>
+                            <div>Ctrl/Shift+Mouse wheel: Adjust visible points</div>
+                            <div>Page Up/Down: Adjust visible points</div>
+                            <div>Drag left/right: Pan through time</div>
+                            <div>+/-: Increase/decrease panning sensitivity</div>
+                            <div>R: Reset chart to default</div>
+                            <div>C: Toggle crosshair on/off</div>
+                            <div>S: Toggle crosshair snap to candles</div>
+                            <div>F: Toggle fullscreen mode</div>
+                            <div>ESC: Exit fullscreen mode</div>
+                        </div>
+                    </div>
+                    
+                    <div class="overlay-settings-group">
+                        <button class="overlay-panel-btn" onclick="debugChart()" style="width: 100%; padding: 8px; font-size: 12px;">
+                            🐛 Debug Chart
+                        </button>
+                    </div>
+                    
+                    <div class="overlay-settings-group">
+                        <label style="font-weight: 600; color: #00ff88; margin-bottom: 8px;">Settings Management</label>
+                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                            <button class="overlay-panel-btn" onclick="saveSettingsWithNotification()" style="flex: 1; padding: 6px; font-size: 11px;">
+                                💾 Save
+                            </button>
+                            <button class="overlay-panel-btn" onclick="loadSettings()" style="flex: 1; padding: 6px; font-size: 11px;">
+                                📂 Load
+                            </button>
+                            <button class="overlay-panel-btn" onclick="clearSettings()" style="flex: 1; padding: 6px; font-size: 11px;">
+                                🗑️ Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 
                 <!-- All Panels on Left Side -->
                 <div class="overlay-left" id="overlayLeft">
@@ -1148,6 +1125,8 @@
         let crosshairEnabled = true;
         let crosshairSnapToCandles = true;
         let crosshairAnimationFrame = null;
+        let isFullscreen = false;
+        let originalChartContainer = null;
         let isDragging = false;
         let dragStartX = 0;
         let dragStartY = 0;
@@ -1529,7 +1508,13 @@
         }
         
         function setupCanvas() {
+            // Use fullscreen canvas if in fullscreen mode
+            if (isFullscreen && window.fullscreenCanvas) {
+                canvas = window.fullscreenCanvas;
+            } else {
             canvas = document.getElementById('candlestickChart');
+            }
+            
             if (!canvas) {
                 console.error('Canvas element not found!');
                 return;
@@ -2981,35 +2966,39 @@
         
         // Interactive chart functions
         function setupInteractiveChart() {
-            if (!canvas) {
+            // Use fullscreen canvas if in fullscreen mode
+            const targetCanvas = (isFullscreen && window.fullscreenCanvas) ? window.fullscreenCanvas : canvas;
+            
+            if (!targetCanvas) {
                 console.error('Canvas not found for interactive setup');
                 return;
             }
             
             // Mouse events
-            canvas.addEventListener('mousedown', handleMouseDown);
-            canvas.addEventListener('mousemove', handleMouseMove);
-            canvas.addEventListener('mouseup', handleMouseUp);
-            canvas.addEventListener('mouseenter', handleMouseEnter);
+            targetCanvas.addEventListener('mousedown', handleMouseDown);
+            targetCanvas.addEventListener('mousemove', handleMouseMove);
+            targetCanvas.addEventListener('mouseup', handleMouseUp);
+            targetCanvas.addEventListener('mouseenter', handleMouseEnter);
             // Add wheel event listener that only works with modifier keys
-            canvas.addEventListener('wheel', (e) => {
+            targetCanvas.addEventListener('wheel', (e) => {
                 if (e.ctrlKey || e.metaKey || e.shiftKey) {
                     handleWheel(e);
                 }
                 // Do nothing for normal scroll - allow page scrolling
             });
-            canvas.addEventListener('mouseleave', handleMouseLeave);
+            targetCanvas.addEventListener('mouseleave', handleMouseLeave);
             
             // Touch events for mobile
-            canvas.addEventListener('touchstart', handleTouchStart);
-            canvas.addEventListener('touchmove', handleTouchMove);
-            canvas.addEventListener('touchend', handleTouchEnd);
+            targetCanvas.addEventListener('touchstart', handleTouchStart);
+            targetCanvas.addEventListener('touchmove', handleTouchMove);
+            targetCanvas.addEventListener('touchend', handleTouchEnd);
         }
         
         function handleMouseDown(e) {
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
+            const targetCanvas = (isFullscreen && window.fullscreenCanvas) ? window.fullscreenCanvas : canvas;
+            const rect = targetCanvas.getBoundingClientRect();
+            const scaleX = targetCanvas.width / rect.width;
+            const scaleY = targetCanvas.height / rect.height;
             
             isMouseDown = true;
             isDragging = true;
@@ -3021,9 +3010,10 @@
         }
         
         function handleMouseMove(e) {
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
+            const targetCanvas = (isFullscreen && window.fullscreenCanvas) ? window.fullscreenCanvas : canvas;
+            const rect = targetCanvas.getBoundingClientRect();
+            const scaleX = targetCanvas.width / rect.width;
+            const scaleY = targetCanvas.height / rect.height;
             
             const mouseX = (e.clientX - rect.left) * scaleX;
             const mouseY = (e.clientY - rect.top) * scaleY;
@@ -3084,7 +3074,8 @@
         function handleMouseUp(e) {
             isMouseDown = false;
             isDragging = false;
-            canvas.style.cursor = 'crosshair';
+            const targetCanvas = (isFullscreen && window.fullscreenCanvas) ? window.fullscreenCanvas : canvas;
+            targetCanvas.style.cursor = 'crosshair';
         }
         
         function handleWheel(e) {
@@ -3092,9 +3083,10 @@
             if (e.ctrlKey || e.metaKey || e.shiftKey) {
                 e.preventDefault();
                 
-                const rect = canvas.getBoundingClientRect();
-                const scaleX = canvas.width / rect.width;
-                const scaleY = canvas.height / rect.height;
+                const targetCanvas = (isFullscreen && window.fullscreenCanvas) ? window.fullscreenCanvas : canvas;
+                const rect = targetCanvas.getBoundingClientRect();
+                const scaleX = targetCanvas.width / rect.width;
+                const scaleY = targetCanvas.height / rect.height;
                 
                 const mouseX = (e.clientX - rect.left) * scaleX;
                 const mouseY = (e.clientY - rect.top) * scaleY;
@@ -3122,9 +3114,10 @@
         
         function handleMouseEnter(e) {
             // Initialize crosshair position when mouse enters canvas
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
+            const targetCanvas = (isFullscreen && window.fullscreenCanvas) ? window.fullscreenCanvas : canvas;
+            const rect = targetCanvas.getBoundingClientRect();
+            const scaleX = targetCanvas.width / rect.width;
+            const scaleY = targetCanvas.height / rect.height;
             
             const mouseX = (e.clientX - rect.left) * scaleX;
             const mouseY = (e.clientY - rect.top) * scaleY;
@@ -3533,7 +3526,8 @@
                 visibleStartIndex: visibleStartIndex,
                 visibleEndIndex: visibleEndIndex,
                 crosshairEnabled: crosshairEnabled,
-                crosshairSnapToCandles: crosshairSnapToCandles
+                crosshairSnapToCandles: crosshairSnapToCandles,
+                isFullscreen: isFullscreen
             };
             
             localStorage.setItem('chartSettings', JSON.stringify(settings));
@@ -3639,6 +3633,10 @@
                     crosshairSnapToCandles = settings.crosshairSnapToCandles;
                 }
                 
+                if (settings.isFullscreen !== undefined) {
+                    isFullscreen = settings.isFullscreen;
+                }
+                
                 return true;
             } catch (error) {
                 console.error('Error loading settings:', error);
@@ -3669,6 +3667,190 @@
                 showStatus('🎯 Crosshair snap to candles disabled', 'info');
             }
             redrawChart();
+        }
+        
+        function toggleFullscreen() {
+            if (!isFullscreen) {
+                enterFullscreen();
+            } else {
+                exitFullscreen();
+            }
+        }
+        
+        function enterFullscreen() {
+            const chartContainer = document.querySelector('.chart-container');
+            const canvas = document.getElementById('candlestickChart');
+            
+            if (!chartContainer || !canvas) {
+                showStatus('❌ Chart container not found', 'error');
+                return;
+            }
+            
+            // Store original parent for restoration
+            originalChartContainer = chartContainer.parentNode;
+            
+            // Create fullscreen container
+            const fullscreenContainer = document.createElement('div');
+            fullscreenContainer.id = 'fullscreen-container';
+            fullscreenContainer.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: #0a0a0a;
+                z-index: 9999;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            `;
+            
+            // Create fullscreen header
+            const fullscreenHeader = document.createElement('div');
+            fullscreenHeader.style.cssText = `
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                z-index: 10000;
+                display: flex;
+                gap: 10px;
+            `;
+            
+            // Add exit fullscreen button
+            const exitBtn = document.createElement('button');
+            exitBtn.innerHTML = '✕ Exit Fullscreen';
+            exitBtn.style.cssText = `
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                border: 1px solid #333;
+                padding: 8px 16px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 14px;
+            `;
+            exitBtn.onclick = exitFullscreen;
+            
+            // Add instructions
+            const instructions = document.createElement('div');
+            instructions.innerHTML = 'Press ESC to exit fullscreen';
+            instructions.style.cssText = `
+                background: rgba(0, 0, 0, 0.8);
+                color: #00ff88;
+                padding: 8px 16px;
+                border-radius: 4px;
+                font-size: 12px;
+                margin-right: 10px;
+            `;
+            
+            fullscreenHeader.appendChild(instructions);
+            fullscreenHeader.appendChild(exitBtn);
+            
+            // Clone the chart container
+            const clonedContainer = chartContainer.cloneNode(true);
+            clonedContainer.style.cssText = `
+                width: 95vw;
+                height: 90vh;
+                margin: 0;
+                position: relative;
+            `;
+            
+            // Update canvas size for fullscreen
+            const clonedCanvas = clonedContainer.querySelector('#candlestickChart');
+            if (clonedCanvas) {
+                clonedCanvas.style.width = '100%';
+                clonedCanvas.style.height = '100%';
+            }
+            
+            // Append to fullscreen container
+            fullscreenContainer.appendChild(fullscreenHeader);
+            fullscreenContainer.appendChild(clonedContainer);
+            
+            // Add to body
+            document.body.appendChild(fullscreenContainer);
+            
+            // Update state
+            isFullscreen = true;
+            
+            // Update button text
+            const fullscreenBtn = document.querySelector('.overlay-settings[onclick="toggleFullscreen()"]');
+            if (fullscreenBtn) {
+                fullscreenBtn.innerHTML = '⛶ Exit Fullscreen';
+            }
+            
+            // Setup canvas for fullscreen
+            setupFullscreenCanvas(clonedCanvas);
+            
+            // Force chart update after a short delay to ensure canvas is ready
+            setTimeout(() => {
+                setupCanvas(); // This will now use the fullscreen canvas
+                updateChart();
+            }, 200);
+            
+            showStatus('⛶ Entered fullscreen mode', 'success');
+        }
+        
+        function exitFullscreen() {
+            const fullscreenContainer = document.getElementById('fullscreen-container');
+            if (fullscreenContainer) {
+                fullscreenContainer.remove();
+            }
+            
+            // Update state
+            isFullscreen = false;
+            
+            // Clear fullscreen canvas reference
+            window.fullscreenCanvas = null;
+            
+            // Update button text
+            const fullscreenBtn = document.querySelector('.overlay-settings[onclick="toggleFullscreen()"]');
+            if (fullscreenBtn) {
+                fullscreenBtn.innerHTML = '⛶ Fullscreen';
+            }
+            
+            // Reinitialize canvas with original
+            setupCanvas();
+            updateChart();
+            
+            showStatus('⛶ Exited fullscreen mode', 'info');
+        }
+        
+        function setupFullscreenCanvas(canvas) {
+            if (!canvas) return;
+            
+            // Set canvas size for fullscreen
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            
+            ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+            
+            // Update chart area for fullscreen
+            chartArea = {
+                x: 80,
+                y: 60,
+                width: rect.width - 160,
+                height: rect.height - 120
+            };
+            
+            // Store reference to fullscreen canvas
+            window.fullscreenCanvas = canvas;
+            
+            // Setup interactive features for fullscreen canvas
+            setupInteractiveChart();
+            
+            // Force a complete chart update
+            setTimeout(() => {
+                // Ensure we're using the fullscreen canvas
+                if (isFullscreen && window.fullscreenCanvas) {
+                    canvas = window.fullscreenCanvas;
+                    ctx = canvas.getContext('2d');
+                }
+                updateChart();
+            }, 100);
         }
         
         function updateCrosshairSmoothly() {
@@ -4005,6 +4187,17 @@
                 case 'S':
                     e.preventDefault();
                     toggleCrosshairSnap();
+                    break;
+                case 'f':
+                case 'F':
+                    e.preventDefault();
+                    toggleFullscreen();
+                    break;
+                case 'Escape':
+                    if (isFullscreen) {
+                        e.preventDefault();
+                        exitFullscreen();
+                    }
                     break;
             }
         });
