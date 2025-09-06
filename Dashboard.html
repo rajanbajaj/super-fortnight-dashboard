@@ -958,6 +958,7 @@
                         <div>Drag left/right: Pan through time</div>
                         <div>+/-: Increase/decrease panning sensitivity</div>
                         <div>R: Reset chart to default</div>
+                        <div>C: Toggle crosshair on/off</div>
                     </div>
                 </div>
                 
@@ -1141,6 +1142,10 @@
         let hoveredIndex = -1;
         let crosshairX = -1;
         let crosshairY = -1;
+        let lastCrosshairX = -1;
+        let lastCrosshairY = -1;
+        let crosshairEnabled = true;
+        let crosshairAnimationFrame = null;
         let isDragging = false;
         let dragStartX = 0;
         let dragStartY = 0;
@@ -2983,6 +2988,7 @@
             canvas.addEventListener('mousedown', handleMouseDown);
             canvas.addEventListener('mousemove', handleMouseMove);
             canvas.addEventListener('mouseup', handleMouseUp);
+            canvas.addEventListener('mouseenter', handleMouseEnter);
             // Add wheel event listener that only works with modifier keys
             canvas.addEventListener('wheel', (e) => {
                 if (e.ctrlKey || e.metaKey || e.shiftKey) {
@@ -3047,9 +3053,13 @@
                 lastMouseY = mouseY;
                 
                 updateChart(); // Full update to show new data range
-            } else if (hoverChanged) {
-                // Only redraw when hover state changes
-                redrawChart();
+            } else {
+                // Update crosshair smoothly
+                if (hoverChanged) {
+                    redrawChart();
+                } else {
+                    updateCrosshairSmoothly();
+                }
             }
         }
         
@@ -3089,6 +3099,14 @@
             hoveredIndex = -1;
             crosshairX = -1;
             crosshairY = -1;
+            redrawChart();
+        }
+        
+        function handleMouseEnter(e) {
+            // Initialize crosshair position when mouse enters canvas
+            const rect = canvas.getBoundingClientRect();
+            crosshairX = e.clientX - rect.left;
+            crosshairY = e.clientY - rect.top;
             redrawChart();
         }
         
@@ -3187,7 +3205,7 @@
         }
         
         function drawCrosshair() {
-            if (crosshairX < 0 || crosshairY < 0) return;
+            if (!crosshairEnabled || crosshairX < 0 || crosshairY < 0) return;
             
             // Scale crosshair coordinates to canvas resolution
             const rect = canvas.getBoundingClientRect();
@@ -3204,20 +3222,43 @@
             }
             
             ctx.save();
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([5, 5]);
+            
+            // Reset any transformations for crosshair drawing
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            
+            // Enable anti-aliasing for smoother lines
+            ctx.imageSmoothingEnabled = true;
+            
+            // Draw crosshair with better visibility and anti-aliasing
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([6, 3]);
+            ctx.lineCap = 'round';
             
             // Vertical line
             ctx.beginPath();
-            ctx.moveTo(scaledX, chartArea.y);
-            ctx.lineTo(scaledX, chartArea.y + chartArea.height);
+            ctx.moveTo(scaledX + 0.5, chartArea.y);
+            ctx.lineTo(scaledX + 0.5, chartArea.y + chartArea.height);
             ctx.stroke();
             
             // Horizontal line
             ctx.beginPath();
-            ctx.moveTo(chartArea.x, scaledY);
-            ctx.lineTo(chartArea.x + chartArea.width, scaledY);
+            ctx.moveTo(chartArea.x, scaledY + 0.5);
+            ctx.lineTo(chartArea.x + chartArea.width, scaledY + 0.5);
+            ctx.stroke();
+            
+            // Draw center dot for better visibility
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.beginPath();
+            ctx.arc(scaledX, scaledY, 2.5, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Draw border around center dot
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.arc(scaledX, scaledY, 2.5, 0, 2 * Math.PI);
             ctx.stroke();
             
             ctx.restore();
@@ -3231,8 +3272,10 @@
             
             const data = visibleData[hoveredIndex];
             const rect = canvas.getBoundingClientRect();
-            const mouseX = crosshairX;
-            const mouseY = crosshairY;
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = crosshairX * scaleX;
+            const mouseY = crosshairY * scaleY;
             
             // Tooltip content
             const tooltipText = [
@@ -3258,31 +3301,53 @@
             let tooltipY = mouseY - tooltipHeight / 2;
             
             // Keep tooltip within canvas bounds
-            if (tooltipX + tooltipWidth > rect.width) {
+            if (tooltipX + tooltipWidth > canvas.width) {
                 tooltipX = mouseX - tooltipWidth - 10;
             }
             if (tooltipY < 0) {
                 tooltipY = 10;
             }
-            if (tooltipY + tooltipHeight > rect.height) {
-                tooltipY = rect.height - tooltipHeight - 10;
+            if (tooltipY + tooltipHeight > canvas.height) {
+                tooltipY = canvas.height - tooltipHeight - 10;
             }
             
             // Draw tooltip background
             ctx.save();
+            
+            // Reset transformations for tooltip
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            
+            // Enable anti-aliasing
+            ctx.imageSmoothingEnabled = true;
+            
+            // Draw tooltip background with rounded corners
             ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
-            ctx.fillRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+            if (ctx.roundRect) {
+                ctx.beginPath();
+                ctx.roundRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 4);
+                ctx.fill();
+            } else {
+                ctx.fillRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+            }
             
             // Draw tooltip border
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
             ctx.lineWidth = 1;
-            ctx.strokeRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+            if (ctx.roundRect) {
+                ctx.beginPath();
+                ctx.roundRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 4);
+                ctx.stroke();
+            } else {
+                ctx.strokeRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+            }
             
             // Draw tooltip text
             ctx.fillStyle = 'white';
             ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.font = '12px Arial';
             tooltipText.forEach((text, index) => {
-                ctx.fillText(text, tooltipX + padding, tooltipY + padding + (index + 1) * lineHeight);
+                ctx.fillText(text, tooltipX + padding, tooltipY + padding + index * lineHeight);
             });
             
             ctx.restore();
@@ -3410,7 +3475,8 @@
                 panOffsetX: panOffsetX,
                 panOffsetY: panOffsetY,
                 visibleStartIndex: visibleStartIndex,
-                visibleEndIndex: visibleEndIndex
+                visibleEndIndex: visibleEndIndex,
+                crosshairEnabled: crosshairEnabled
             };
             
             localStorage.setItem('chartSettings', JSON.stringify(settings));
@@ -3508,6 +3574,10 @@
                     visibleEndIndex = settings.visibleEndIndex;
                 }
                 
+                if (settings.crosshairEnabled !== undefined) {
+                    crosshairEnabled = settings.crosshairEnabled;
+                }
+                
                 return true;
             } catch (error) {
                 console.error('Error loading settings:', error);
@@ -3518,6 +3588,31 @@
         function clearSettings() {
             localStorage.removeItem('chartSettings');
             showStatus('🗑️ Settings cleared from localStorage', 'success');
+        }
+        
+        function toggleCrosshair() {
+            crosshairEnabled = !crosshairEnabled;
+            if (crosshairEnabled) {
+                showStatus('🎯 Crosshair enabled', 'success');
+            } else {
+                showStatus('🎯 Crosshair disabled', 'info');
+            }
+            redrawChart();
+        }
+        
+        function updateCrosshairSmoothly() {
+            if (crosshairAnimationFrame) {
+                cancelAnimationFrame(crosshairAnimationFrame);
+            }
+            
+            crosshairAnimationFrame = requestAnimationFrame(() => {
+                if (Math.abs(crosshairX - lastCrosshairX) > 1 || Math.abs(crosshairY - lastCrosshairY) > 1) {
+                    redrawChart();
+                    lastCrosshairX = crosshairX;
+                    lastCrosshairY = crosshairY;
+                }
+                crosshairAnimationFrame = null;
+            });
         }
         
         function saveSettingsWithNotification() {
@@ -3793,6 +3888,11 @@
                 case 'R':
                     e.preventDefault();
                     resetChartToDefault();
+                    break;
+                case 'c':
+                case 'C':
+                    e.preventDefault();
+                    toggleCrosshair();
                     break;
             }
         });
