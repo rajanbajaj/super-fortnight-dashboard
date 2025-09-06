@@ -667,20 +667,27 @@
                 filtered = filtered.slice(-numRows);
             }
             
-            // Filter by cluster
-            if (clusterFilter !== 'all') {
-                const cluster = parseInt(clusterFilter);
-                filtered = filtered.filter(d => d.predicted_cluster === cluster);
-            }
-            
-            // Filter by candle type (bullish/bearish)
-            if (candleTypeFilter !== 'all') {
-                if (candleTypeFilter === 'bullish') {
-                    filtered = filtered.filter(d => d.close > d.open);
-                } else if (candleTypeFilter === 'bearish') {
-                    filtered = filtered.filter(d => d.close < d.open);
+            // Add visibility flags instead of removing data
+            filtered = filtered.map(d => {
+                let visible = true;
+                
+                // Filter by cluster
+                if (clusterFilter !== 'all') {
+                    const cluster = parseInt(clusterFilter);
+                    visible = visible && d.predicted_cluster === cluster;
                 }
-            }
+                
+                // Filter by candle type (bullish/bearish)
+                if (candleTypeFilter !== 'all') {
+                    if (candleTypeFilter === 'bullish') {
+                        visible = visible && d.close > d.open;
+                    } else if (candleTypeFilter === 'bearish') {
+                        visible = visible && d.close < d.open;
+                    }
+                }
+                
+                return { ...d, visible };
+            });
             
             filteredData = filtered;
         }
@@ -750,30 +757,33 @@
                 const x = chartArea.x + i * xStep + xStep / 2;
                 const color = getDataColor(data);
                 
-                drawCandlestick(
-                    x, 
-                    data.open, 
-                    data.high, 
-                    data.low, 
-                    data.close,
-                    minPrice - padding,
-                    maxPrice + padding,
-                    chartHeight,
-                    candleWidth,
-                    color
-                );
-                
-                // Draw volume bar if enabled
-                if (showVolume) {
-                    drawVolumeBar(
-                        x,
-                        data.volume,
-                        maxVolume,
-                        chartArea.y + chartHeight + 40,
-                        volumeHeight,
+                // Only draw if visible
+                if (data.visible) {
+                    drawCandlestick(
+                        x, 
+                        data.open, 
+                        data.high, 
+                        data.low, 
+                        data.close,
+                        minPrice - padding,
+                        maxPrice + padding,
+                        chartHeight,
                         candleWidth,
                         color
                     );
+                    
+                    // Draw volume bar if enabled
+                    if (showVolume) {
+                        drawVolumeBar(
+                            x,
+                            data.volume,
+                            maxVolume,
+                            chartArea.y + chartHeight + 40,
+                            volumeHeight,
+                            candleWidth,
+                            color
+                        );
+                    }
                 }
             });
             
@@ -804,24 +814,27 @@
             
             // Draw scatter points
             filteredData.forEach((data, i) => {
-                const color = getDataColor(data);
-                
-                const x = chartArea.x + ((data[xAxis] - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
-                const y = chartArea.y + chartArea.height - ((data[yAxis] - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
-                
-                // Draw point
-                ctx.fillStyle = color.main;
-                ctx.beginPath();
-                ctx.arc(x, y, 8, 0, 2 * Math.PI);
-                ctx.fill();
-                
-                // Add glow effect
-                ctx.shadowColor = color.shadow;
-                ctx.shadowBlur = 15;
-                ctx.beginPath();
-                ctx.arc(x, y, 8, 0, 2 * Math.PI);
-                ctx.fill();
-                ctx.shadowBlur = 0;
+                // Only draw if visible
+                if (data.visible) {
+                    const color = getDataColor(data);
+                    
+                    const x = chartArea.x + ((data[xAxis] - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
+                    const y = chartArea.y + chartArea.height - ((data[yAxis] - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
+                    
+                    // Draw point
+                    ctx.fillStyle = color.main;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 8, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    // Add glow effect
+                    ctx.shadowColor = color.shadow;
+                    ctx.shadowBlur = 15;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 8, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
             });
             
             // Draw axes labels
@@ -854,15 +867,18 @@
                 // Group data by cluster for different colored lines
                 const clusterGroups = {};
                 filteredData.forEach((data, i) => {
-                    const cluster = data.predicted_cluster || 0;
-                    if (!clusterGroups[cluster]) {
-                        clusterGroups[cluster] = [];
+                    // Only include visible points
+                    if (data.visible) {
+                        const cluster = data.predicted_cluster || 0;
+                        if (!clusterGroups[cluster]) {
+                            clusterGroups[cluster] = [];
+                        }
+                        clusterGroups[cluster].push({
+                            x: data[xAxis],
+                            y: data[yAxis],
+                            index: i
+                        });
                     }
-                    clusterGroups[cluster].push({
-                        x: data[xAxis],
-                        y: data[yAxis],
-                        index: i
-                    });
                 });
                 
                 // Draw lines for each cluster
@@ -908,14 +924,19 @@
                 ctx.shadowBlur = 10;
                 
                 ctx.beginPath();
+                let firstPoint = true;
                 filteredData.forEach((data, i) => {
-                    const x = chartArea.x + ((data[xAxis] - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
-                    const y = chartArea.y + chartArea.height - ((data[yAxis] - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
-                    
-                    if (i === 0) {
-                        ctx.moveTo(x, y);
-                    } else {
-                        ctx.lineTo(x, y);
+                    // Only draw visible points
+                    if (data.visible) {
+                        const x = chartArea.x + ((data[xAxis] - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
+                        const y = chartArea.y + chartArea.height - ((data[yAxis] - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
+                        
+                        if (firstPoint) {
+                            ctx.moveTo(x, y);
+                            firstPoint = false;
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
                     }
                 });
                 ctx.stroke();
@@ -923,14 +944,17 @@
                 
                 // Draw points with individual colors
                 filteredData.forEach((data, i) => {
-                    const x = chartArea.x + ((data[xAxis] - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
-                    const y = chartArea.y + chartArea.height - ((data[yAxis] - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
-                    const color = getDataColor(data);
-                    
-                    ctx.fillStyle = color.main;
-                    ctx.beginPath();
-                    ctx.arc(x, y, 6, 0, 2 * Math.PI);
-                    ctx.fill();
+                    // Only draw visible points
+                    if (data.visible) {
+                        const x = chartArea.x + ((data[xAxis] - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
+                        const y = chartArea.y + chartArea.height - ((data[yAxis] - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
+                        const color = getDataColor(data);
+                        
+                        ctx.fillStyle = color.main;
+                        ctx.beginPath();
+                        ctx.arc(x, y, 6, 0, 2 * Math.PI);
+                        ctx.fill();
+                    }
                 });
             }
             
@@ -954,16 +978,19 @@
             const binData = {};
             
             data.forEach((value, i) => {
-                const binIndex = Math.min(Math.floor((value - minValue) / binWidth), numBins - 1);
-                bins[binIndex]++;
-                
-                if (!binData[binIndex]) {
-                    binData[binIndex] = [];
+                // Only include visible data points
+                if (filteredData[i].visible) {
+                    const binIndex = Math.min(Math.floor((value - minValue) / binWidth), numBins - 1);
+                    bins[binIndex]++;
+                    
+                    if (!binData[binIndex]) {
+                        binData[binIndex] = [];
+                    }
+                    binData[binIndex].push({
+                        value: value,
+                        data: filteredData[i]
+                    });
                 }
-                binData[binIndex].push({
-                    value: value,
-                    data: filteredData[i]
-                });
             });
             
             const maxCount = Math.max(...bins);
@@ -1245,11 +1272,11 @@
             
             if (showClusterColors) {
                 // Show cluster information
-                const uniqueClusters = [...new Set(filteredData.map(d => d.predicted_cluster || 0))].sort();
+                const uniqueClusters = [...new Set(filteredData.filter(d => d.visible).map(d => d.predicted_cluster || 0))].sort();
                 
                 uniqueClusters.forEach(cluster => {
                     const color = clusterColors[cluster] || clusterColors[0];
-                    const count = filteredData.filter(d => (d.predicted_cluster || 0) === cluster).length;
+                    const count = filteredData.filter(d => d.visible && (d.predicted_cluster || 0) === cluster).length;
                     
                     const item = document.createElement('div');
                     item.className = 'legend-item';
@@ -1261,9 +1288,10 @@
                 });
             } else {
                 // Show price-based color information
-                const bullishCount = filteredData.filter(d => d.close > d.open).length;
-                const bearishCount = filteredData.filter(d => d.close < d.open).length;
-                const dojiCount = filteredData.filter(d => d.close === d.open).length;
+                const visibleData = filteredData.filter(d => d.visible);
+                const bullishCount = visibleData.filter(d => d.close > d.open).length;
+                const bearishCount = visibleData.filter(d => d.close < d.open).length;
+                const dojiCount = visibleData.filter(d => d.close === d.open).length;
                 
                 if (bullishCount > 0) {
                     const item = document.createElement('div');
@@ -1317,8 +1345,15 @@
                 return;
             }
             
-            const prices = filteredData.map(d => d.close);
-            const volumes = filteredData.map(d => d.volume);
+            // Only use visible data for calculations
+            const visibleData = filteredData.filter(d => d.visible);
+            const prices = visibleData.map(d => d.close);
+            const volumes = visibleData.map(d => d.volume);
+            
+            if (visibleData.length === 0) {
+                document.getElementById('stats').innerHTML = '<div class="stat-card"><div class="stat-value">No Visible Data</div><div class="stat-label">Adjust filters to see data</div></div>';
+                return;
+            }
             
             const minPrice = Math.min(...prices);
             const maxPrice = Math.max(...prices);
@@ -1327,20 +1362,24 @@
             
             // Calculate cluster distribution
             const clusterCounts = {};
-            filteredData.forEach(d => {
+            visibleData.forEach(d => {
                 const cluster = d.predicted_cluster || 0;
                 clusterCounts[cluster] = (clusterCounts[cluster] || 0) + 1;
             });
             
             // Calculate bullish and bearish candle counts
-            const bullishCount = filteredData.filter(d => d.close > d.open).length;
-            const bearishCount = filteredData.filter(d => d.close < d.open).length;
-            const dojiCount = filteredData.filter(d => d.close === d.open).length;
+            const bullishCount = visibleData.filter(d => d.close > d.open).length;
+            const bearishCount = visibleData.filter(d => d.close < d.open).length;
+            const dojiCount = visibleData.filter(d => d.close === d.open).length;
             
             const statsHtml = `
                 <div class="stat-card">
+                    <div class="stat-value">${visibleData.length}</div>
+                    <div class="stat-label">Visible Points</div>
+                </div>
+                <div class="stat-card">
                     <div class="stat-value">${filteredData.length}</div>
-                    <div class="stat-label">Data Points</div>
+                    <div class="stat-label">Total Points</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-value">₹${avgPrice.toFixed(2)}</div>
