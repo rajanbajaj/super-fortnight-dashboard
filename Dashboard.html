@@ -19,6 +19,32 @@
             min-height: 100vh;
             padding: 20px;
             box-sizing: border-box;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .controls {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .control-section {
+                padding: 15px;
+            }
+            
+            .legend-content {
+                gap: 15px;
+            }
+            
+            .stats-content {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap: 12px;
+            }
         }
         
         .header {
@@ -34,6 +60,7 @@
             font-size: 3rem;
             margin: 0;
             background: linear-gradient(45deg, #00ff88, #00d4ff, #ff6b6b);
+            background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             text-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
@@ -46,11 +73,21 @@
         }
 
         .data-input {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+        }
+        
+        .data-input h3 {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .data-input textarea {
@@ -99,37 +136,63 @@
         }
         
         .controls {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
             margin-bottom: 30px;
-            flex-wrap: wrap;
+        }
+        
+        .control-section {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+        }
+        
+        .control-section h3 {
+            margin: 0 0 18px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .control-group {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px 20px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            min-width: 150px;
+            margin-bottom: 16px;
+        }
+        
+        .control-group:last-child {
+            margin-bottom: 0;
         }
         
         label {
             display: block;
             margin-bottom: 8px;
-            font-weight: 600;
-            font-size: 0.9rem;
+            font-weight: 500;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
         }
         
         select, input {
             width: 100%;
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.25);
             border-radius: 8px;
-            padding: 8px 12px;
+            padding: 10px 12px;
             color: white;
             font-size: 14px;
             box-sizing: border-box;
+            transition: all 0.2s ease;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #00ff88;
+            box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.2);
         }
         
         select option {
@@ -137,11 +200,49 @@
             color: white;
         }
         
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+            accent-color: #00ff88;
+        }
+        
+        .checkbox-group label {
+            margin: 0;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+        }
+        
         .legend {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .legend h3 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .legend-content {
             display: flex;
             justify-content: center;
-            gap: 30px;
-            margin: 20px 0;
+            gap: 20px;
             flex-wrap: wrap;
         }
         
@@ -149,16 +250,23 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 10px 16px;
             border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s ease;
+        }
+        
+        .legend-item:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-1px);
         }
         
         .legend-color {
-            width: 20px;
-            height: 20px;
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         
         .chart-container {
@@ -180,29 +288,54 @@
         }
         
         .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
             margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .stats h3 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stats-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
         }
         
         .stat-card {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 18px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
             text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.2s ease;
+        }
+        
+        .stat-card:hover {
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
         }
         
         .stat-value {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             font-weight: bold;
-            color: #00ff88;
+            margin-bottom: 6px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         
         .stat-label {
-            font-size: 0.9rem;
-            opacity: 0.8;
+            font-size: 0.85rem;
+            opacity: 0.9;
+            font-weight: 500;
             margin-top: 5px;
         }
 
@@ -246,99 +379,143 @@
         </div>
         
         <div class="controls">
-            <div class="control-group">
-                <label for="chartType">Chart Type:</label>
-                <select id="chartType" onchange="updateChart()">
-                    <option value="candlestick">Standard Candlestick</option>
-                    <option value="scatter">Scatter Plot</option>
-                    <option value="line">Line Chart</option>
-                    <option value="histogram">Histogram</option>
-                </select>
+            <!-- Chart Configuration Section -->
+            <div class="control-section">
+                <h3>📊 Chart Configuration</h3>
+                <div class="control-group">
+                    <label for="chartType">Chart Type:</label>
+                    <select id="chartType" onchange="updateChart()">
+                        <option value="candlestick">Standard Candlestick</option>
+                        <option value="scatter">Scatter Plot</option>
+                        <option value="line">Line Chart</option>
+                        <option value="histogram">Histogram</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="numRows">Number of Rows:</label>
+                    <input type="number" id="numRows" min="10" max="1000" value="200" onchange="updateChart()">
+                </div>
+                
+                <div class="control-group" id="candleWidthGroup">
+                    <label for="candleWidth">Candle Width:</label>
+                    <input type="range" id="candleWidth" min="2" max="20" value="8" onchange="updateChart()">
+                </div>
+                
+                <div class="control-group">
+                    <label for="showVolume">Show Volume:</label>
+                    <select id="showVolume" onchange="updateChart()">
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                    </select>
+                </div>
             </div>
             
-            <div class="control-group">
-                <label for="numRows">Number of Rows:</label>
-                <input type="number" id="numRows" min="10" max="1000" value="200" onchange="updateChart()">
+            <!-- Axis Configuration Section -->
+            <div class="control-section">
+                <h3>📈 Axis Configuration</h3>
+                <div class="control-group" id="xAxisGroup" style="display: none;">
+                    <label for="xAxis">X-Axis Feature:</label>
+                    <select id="xAxis" onchange="updateChart()">
+                        <option value="timestamp">Timestamp</option>
+                        <option value="open">Open Price</option>
+                        <option value="high">High Price</option>
+                        <option value="low">Low Price</option>
+                        <option value="close">Close Price</option>
+                        <option value="volume">Volume</option>
+                    </select>
+                </div>
+                
+                <div class="control-group" id="yAxisGroup" style="display: none;">
+                    <label for="yAxis">Y-Axis Feature:</label>
+                    <select id="yAxis" onchange="updateChart()">
+                        <option value="close">Close Price</option>
+                        <option value="open">Open Price</option>
+                        <option value="high">High Price</option>
+                        <option value="low">Low Price</option>
+                        <option value="volume">Volume</option>
+                    </select>
+                </div>
+                
+                <div class="control-group" id="histogramGroup" style="display: none;">
+                    <label for="histogramFeature">Histogram Feature:</label>
+                    <select id="histogramFeature" onchange="updateChart()">
+                        <option value="close">Close Price</option>
+                        <option value="open">Open Price</option>
+                        <option value="high">High Price</option>
+                        <option value="low">Low Price</option>
+                        <option value="volume">Volume</option>
+                    </select>
+                </div>
             </div>
             
-            <div class="control-group" id="candleWidthGroup">
-                <label for="candleWidth">Candle Width:</label>
-                <input type="range" id="candleWidth" min="2" max="20" value="8" onchange="updateChart()">
+            <!-- Filtering Section -->
+            <div class="control-section">
+                <h3>🔍 Data Filtering</h3>
+                <div class="control-group">
+                    <label for="clusterFilter">Filter by Cluster:</label>
+                    <select id="clusterFilter" onchange="updateChart()">
+                        <option value="all">All Clusters</option>
+                        <option value="0">Cluster 0</option>
+                        <option value="1">Cluster 1</option>
+                        <option value="2">Cluster 2</option>
+                        <option value="3">Cluster 3</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="candleTypeFilter">Filter by Candle Type:</label>
+                    <select id="candleTypeFilter" onchange="updateChart()">
+                        <option value="all">All Candles</option>
+                        <option value="bullish">Bullish (Green)</option>
+                        <option value="bearish">Bearish (Red)</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="candlePatternFilter">Filter by Candle Pattern:</label>
+                    <select id="candlePatternFilter" onchange="updateChart()">
+                        <option value="all">All Patterns</option>
+                        <option value="doji">Doji</option>
+                        <option value="marubozu">Marubozu</option>
+                        <option value="hammer">Hammer</option>
+                        <option value="hanging_man">Hanging Man</option>
+                        <option value="shooting_star">Shooting Star</option>
+                        <option value="inverted_hammer">Inverted Hammer</option>
+                        <option value="spinning_top">Spinning Top</option>
+                        <option value="long_legged_doji">Long Legged Doji</option>
+                    </select>
+                </div>
             </div>
             
-            <div class="control-group" id="xAxisGroup" style="display: none;">
-                <label for="xAxis">X-Axis Feature:</label>
-                <select id="xAxis" onchange="updateChart()">
-                    <option value="timestamp">Timestamp</option>
-                    <option value="open">Open Price</option>
-                    <option value="high">High Price</option>
-                    <option value="low">Low Price</option>
-                    <option value="close">Close Price</option>
-                    <option value="volume">Volume</option>
-                </select>
-            </div>
-            
-            <div class="control-group" id="yAxisGroup" style="display: none;">
-                <label for="yAxis">Y-Axis Feature:</label>
-                <select id="yAxis" onchange="updateChart()">
-                    <option value="close">Close Price</option>
-                    <option value="open">Open Price</option>
-                    <option value="high">High Price</option>
-                    <option value="low">Low Price</option>
-                    <option value="volume">Volume</option>
-                </select>
-            </div>
-            
-            <div class="control-group" id="histogramGroup" style="display: none;">
-                <label for="histogramFeature">Histogram Feature:</label>
-                <select id="histogramFeature" onchange="updateChart()">
-                    <option value="close">Close Price</option>
-                    <option value="open">Open Price</option>
-                    <option value="high">High Price</option>
-                    <option value="low">Low Price</option>
-                    <option value="volume">Volume</option>
-                </select>
-            </div>
-            
-            <div class="control-group">
-                <label for="showVolume">Show Volume:</label>
-                <select id="showVolume" onchange="updateChart()">
-                    <option value="true">Yes</option>
-                    <option value="false">No</option>
-                </select>
-            </div>
-            
-            <div class="control-group">
-                <label for="clusterFilter">Filter by Cluster:</label>
-                <select id="clusterFilter" onchange="updateChart()">
-                    <option value="all">All Clusters</option>
-                    <option value="0">Cluster 0</option>
-                    <option value="1">Cluster 1</option>
-                    <option value="2">Cluster 2</option>
-                    <option value="3">Cluster 3</option>
-                </select>
-            </div>
-            
-            <div class="control-group">
-                <label for="candleTypeFilter">Filter by Candle Type:</label>
-                <select id="candleTypeFilter" onchange="updateChart()">
-                    <option value="all">All Candles</option>
-                    <option value="bullish">Bullish (Green)</option>
-                    <option value="bearish">Bearish (Red)</option>
-                </select>
-            </div>
-            
-            <div class="control-group">
-                <label for="showClusterColors" style="display: flex; align-items: center; gap: 8px;">
-                    <input type="checkbox" id="showClusterColors" checked onchange="updateChart()" style="width: auto; margin: 0;">
-                    Show Cluster Colors
-                </label>
+            <!-- Visual Styling Section -->
+            <div class="control-section">
+                <h3>🎨 Visual Styling</h3>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="showClusterColors" checked onchange="updateChart()">
+                    <label for="showClusterColors">Show Cluster Colors</label>
+                </div>
+                
+                <div class="control-group">
+                    <label for="patternColorMode">Pattern Color Mode:</label>
+                    <select id="patternColorMode" onchange="updateChart()">
+                        <option value="bullish_bearish">Bullish/Bearish Colors</option>
+                        <option value="pattern_specific">Pattern Specific Colors</option>
+                        <option value="no_colors">No Pattern Colors</option>
+                    </select>
+                </div>
             </div>
         </div>
         
-        <div class="legend" id="legend"></div>
+        <div class="legend">
+            <h3>📊 Chart Legend</h3>
+            <div class="legend-content" id="legend"></div>
+        </div>
         
-        <div class="stats" id="stats"></div>
+        <div class="stats">
+            <h3>📈 Statistics</h3>
+            <div class="stats-content" id="stats"></div>
+        </div>
         
         <div class="chart-container">
             <canvas id="candlestickChart"></canvas>
@@ -367,6 +544,78 @@
             neutral: { main: '#4ecdc4', shadow: 'rgba(78, 205, 196, 0.3)' }
         };
         
+        // Candle pattern detection functions
+        function detectCandlePattern(data) {
+            const { open, high, low, close } = data;
+            const bodySize = Math.abs(close - open);
+            const upperShadow = high - Math.max(open, close);
+            const lowerShadow = Math.min(open, close) - low;
+            const totalRange = high - low;
+            
+            // Avoid division by zero
+            if (totalRange === 0) return 'doji';
+            
+            const bodyRatio = bodySize / totalRange;
+            const upperShadowRatio = upperShadow / totalRange;
+            const lowerShadowRatio = lowerShadow / totalRange;
+            
+            // Doji patterns
+            if (bodyRatio < 0.1) {
+                if (upperShadowRatio > 0.3 && lowerShadowRatio > 0.3) {
+                    return 'long_legged_doji';
+                }
+                return 'doji';
+            }
+            
+            // Marubozu (small shadows)
+            if (upperShadowRatio < 0.1 && lowerShadowRatio < 0.1) {
+                return 'marubozu';
+            }
+            
+            // Hammer patterns (long lower shadow, small upper shadow)
+            if (lowerShadowRatio > 0.6 && upperShadowRatio < 0.2 && bodyRatio > 0.1) {
+                if (close > open) {
+                    return 'hammer';
+                } else {
+                    return 'hanging_man';
+                }
+            }
+            
+            // Shooting star patterns (long upper shadow, small lower shadow)
+            if (upperShadowRatio > 0.6 && lowerShadowRatio < 0.2 && bodyRatio > 0.1) {
+                if (close < open) {
+                    return 'shooting_star';
+                } else {
+                    return 'inverted_hammer';
+                }
+            }
+            
+            // Spinning top (small body, both shadows present)
+            if (bodyRatio < 0.3 && upperShadowRatio > 0.2 && lowerShadowRatio > 0.2) {
+                return 'spinning_top';
+            }
+            
+            // Default to basic bullish/bearish
+            return close > open ? 'bullish' : 'bearish';
+        }
+        
+        // Get candle pattern color
+        function getCandlePatternColor(pattern) {
+            const patternColors = {
+                doji: { main: '#ffe66d', shadow: 'rgba(255, 230, 109, 0.3)' },
+                long_legged_doji: { main: '#ff9ff3', shadow: 'rgba(255, 159, 243, 0.3)' },
+                marubozu: { main: '#ff6b6b', shadow: 'rgba(255, 107, 107, 0.3)' },
+                hammer: { main: '#00ff88', shadow: 'rgba(0, 255, 136, 0.3)' },
+                hanging_man: { main: '#ff6b6b', shadow: 'rgba(255, 107, 107, 0.3)' },
+                shooting_star: { main: '#ff6b6b', shadow: 'rgba(255, 107, 107, 0.3)' },
+                inverted_hammer: { main: '#00ff88', shadow: 'rgba(0, 255, 136, 0.3)' },
+                spinning_top: { main: '#4ecdc4', shadow: 'rgba(78, 205, 196, 0.3)' },
+                bullish: { main: '#00ff88', shadow: 'rgba(0, 255, 136, 0.3)' },
+                bearish: { main: '#ff6b6b', shadow: 'rgba(255, 107, 107, 0.3)' }
+            };
+            return patternColors[pattern] || patternColors.bullish;
+        }
+        
         // Helper function to get color based on cluster coloring setting
         function getDataColor(data) {
             const showClusterColors = document.getElementById('showClusterColors').checked;
@@ -376,13 +625,24 @@
                 const cluster = data.predicted_cluster || 0;
                 return clusterColors[cluster] || clusterColors[0];
             } else {
-                // Use price-based colors (bullish/bearish)
-                if (data.close > data.open) {
-                    return defaultColors.bullish;
-                } else if (data.close < data.open) {
-                    return defaultColors.bearish;
-                } else {
+                const patternColorMode = document.getElementById('patternColorMode').value;
+                
+                if (patternColorMode === 'pattern_specific') {
+                    // Use pattern-specific colors
+                    const pattern = detectCandlePattern(data);
+                    return getCandlePatternColor(pattern);
+                } else if (patternColorMode === 'no_colors') {
+                    // Use neutral color for all patterns
                     return defaultColors.neutral;
+                } else {
+                    // Use simple bullish/bearish colors (default)
+                    if (data.close > data.open) {
+                        return defaultColors.bullish;
+                    } else if (data.close < data.open) {
+                        return defaultColors.bearish;
+                    } else {
+                        return defaultColors.neutral;
+                    }
                 }
             }
         }
@@ -659,6 +919,7 @@
             const numRows = parseInt(document.getElementById('numRows').value);
             const clusterFilter = document.getElementById('clusterFilter').value;
             const candleTypeFilter = document.getElementById('candleTypeFilter').value;
+            const candlePatternFilter = document.getElementById('candlePatternFilter').value;
             
             let filtered = [...stockData];
             
@@ -684,6 +945,12 @@
                     } else if (candleTypeFilter === 'bearish') {
                         visible = visible && d.close < d.open;
                     }
+                }
+                
+                // Filter by candle pattern
+                if (candlePatternFilter !== 'all') {
+                    const pattern = detectCandlePattern(d);
+                    visible = visible && pattern === candlePatternFilter;
                 }
                 
                 return { ...d, visible };
@@ -1425,41 +1692,49 @@
                     legend.appendChild(item);
                 });
             } else {
-                // Show price-based color information
+                // Show candle pattern information based on color mode
                 const visibleData = filteredData.filter(d => d.visible);
-                const bullishCount = visibleData.filter(d => d.close > d.open).length;
-                const bearishCount = visibleData.filter(d => d.close < d.open).length;
-                const dojiCount = visibleData.filter(d => d.close === d.open).length;
+                const patternCounts = {};
+                const patternColorMode = document.getElementById('patternColorMode').value;
                 
-                if (bullishCount > 0) {
+                visibleData.forEach(d => {
+                    const pattern = detectCandlePattern(d);
+                    patternCounts[pattern] = (patternCounts[pattern] || 0) + 1;
+                });
+                
+                // Sort patterns by count (descending)
+                const sortedPatterns = Object.keys(patternCounts).sort((a, b) => patternCounts[b] - patternCounts[a]);
+                
+                sortedPatterns.forEach(pattern => {
+                    const count = patternCounts[pattern];
+                    const displayName = pattern.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    
+                    let color;
+                    if (patternColorMode === 'pattern_specific') {
+                        // Use pattern-specific colors
+                        color = getCandlePatternColor(pattern).main;
+                    } else if (patternColorMode === 'no_colors') {
+                        // Use neutral color for all
+                        color = defaultColors.neutral.main;
+                    } else {
+                        // Use simple color based on bullish/bearish nature
+                        if (pattern.includes('bullish') || pattern === 'hammer' || pattern === 'inverted_hammer') {
+                            color = defaultColors.bullish.main;
+                        } else if (pattern.includes('bearish') || pattern === 'hanging_man' || pattern === 'shooting_star' || pattern === 'marubozu') {
+                            color = defaultColors.bearish.main;
+                        } else {
+                            color = defaultColors.neutral.main;
+                        }
+                    }
+                    
                     const item = document.createElement('div');
                     item.className = 'legend-item';
                     item.innerHTML = `
-                        <div class="legend-color" style="background-color: ${defaultColors.bullish.main}"></div>
-                        <span>Bullish (${bullishCount} candles)</span>
+                        <div class="legend-color" style="background-color: ${color}"></div>
+                        <span>${displayName} (${count} candles)</span>
                     `;
                     legend.appendChild(item);
-                }
-                
-                if (bearishCount > 0) {
-                    const item = document.createElement('div');
-                    item.className = 'legend-item';
-                    item.innerHTML = `
-                        <div class="legend-color" style="background-color: ${defaultColors.bearish.main}"></div>
-                        <span>Bearish (${bearishCount} candles)</span>
-                    `;
-                    legend.appendChild(item);
-                }
-                
-                if (dojiCount > 0) {
-                    const item = document.createElement('div');
-                    item.className = 'legend-item';
-                    item.innerHTML = `
-                        <div class="legend-color" style="background-color: ${defaultColors.neutral.main}"></div>
-                        <span>Doji (${dojiCount} candles)</span>
-                    `;
-                    legend.appendChild(item);
-                }
+                });
             }
             
             // Add candle type information if filter is applied
@@ -1475,11 +1750,46 @@
                 `;
                 legend.appendChild(candleTypeItem);
             }
+            
+            // Add candle pattern information if filter is applied
+            const candlePatternFilter = document.getElementById('candlePatternFilter').value;
+            if (candlePatternFilter !== 'all') {
+                const candlePatternItem = document.createElement('div');
+                candlePatternItem.className = 'legend-item';
+                
+                const patternColorMode = document.getElementById('patternColorMode').value;
+                let color;
+                
+                if (patternColorMode === 'pattern_specific') {
+                    // Use pattern-specific colors
+                    color = getCandlePatternColor(candlePatternFilter).main;
+                } else if (patternColorMode === 'no_colors') {
+                    // Use neutral color for all
+                    color = defaultColors.neutral.main;
+                } else {
+                    // Use simple color based on bullish/bearish nature
+                    if (candlePatternFilter.includes('bullish') || candlePatternFilter === 'hammer' || candlePatternFilter === 'inverted_hammer') {
+                        color = defaultColors.bullish.main;
+                    } else if (candlePatternFilter.includes('bearish') || candlePatternFilter === 'hanging_man' || candlePatternFilter === 'shooting_star' || candlePatternFilter === 'marubozu') {
+                        color = defaultColors.bearish.main;
+                    } else {
+                        color = defaultColors.neutral.main;
+                    }
+                }
+                
+                const patternLabel = candlePatternFilter.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                candlePatternItem.innerHTML = `
+                    <div class="legend-color" style="background-color: ${color}"></div>
+                    <span>${patternLabel} Pattern Only</span>
+                `;
+                legend.appendChild(candlePatternItem);
+            }
         }
         
         function updateStats() {
+            const statsContainer = document.getElementById('stats');
             if (filteredData.length === 0) {
-                document.getElementById('stats').innerHTML = '<div class="stat-card"><div class="stat-value">No Data</div><div class="stat-label">Load data to see stats</div></div>';
+                statsContainer.innerHTML = '<div class="stat-card"><div class="stat-value">No Data</div><div class="stat-label">Load data to see stats</div></div>';
                 return;
             }
             
@@ -1505,12 +1815,18 @@
                 clusterCounts[cluster] = (clusterCounts[cluster] || 0) + 1;
             });
             
-            // Calculate bullish and bearish candle counts
-            const bullishCount = visibleData.filter(d => d.close > d.open).length;
-            const bearishCount = visibleData.filter(d => d.close < d.open).length;
-            const dojiCount = visibleData.filter(d => d.close === d.open).length;
+            // Calculate candle pattern statistics
+            const patternCounts = {};
+            visibleData.forEach(d => {
+                const pattern = detectCandlePattern(d);
+                patternCounts[pattern] = (patternCounts[pattern] || 0) + 1;
+            });
             
-            const statsHtml = `
+            // Get top patterns for display
+            const sortedPatterns = Object.keys(patternCounts).sort((a, b) => patternCounts[b] - patternCounts[a]);
+            const topPatterns = sortedPatterns.slice(0, 3); // Top 3 patterns
+            
+            let statsHtml = `
                 <div class="stat-card">
                     <div class="stat-value">${visibleData.length}</div>
                     <div class="stat-label">Visible Points</div>
@@ -1539,21 +1855,41 @@
                     <div class="stat-value">${Object.keys(clusterCounts).length}</div>
                     <div class="stat-label">Active Clusters</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value" style="color: #00ff88">${bullishCount}</div>
-                    <div class="stat-label">Bullish Candles</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" style="color: #ff6b6b">${bearishCount}</div>
-                    <div class="stat-label">Bearish Candles</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" style="color: #ffe66d">${dojiCount}</div>
-                    <div class="stat-label">Doji Candles</div>
-                </div>
             `;
             
-            document.getElementById('stats').innerHTML = statsHtml;
+            // Add top candle patterns
+            const patternColorMode = document.getElementById('patternColorMode').value;
+            topPatterns.forEach((pattern, index) => {
+                const count = patternCounts[pattern];
+                const displayName = pattern.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                
+                let color;
+                if (patternColorMode === 'pattern_specific') {
+                    // Use pattern-specific colors
+                    color = getCandlePatternColor(pattern).main;
+                } else if (patternColorMode === 'no_colors') {
+                    // Use neutral color for all
+                    color = defaultColors.neutral.main;
+                } else {
+                    // Use simple color based on bullish/bearish nature
+                    if (pattern.includes('bullish') || pattern === 'hammer' || pattern === 'inverted_hammer') {
+                        color = defaultColors.bullish.main;
+                    } else if (pattern.includes('bearish') || pattern === 'hanging_man' || pattern === 'shooting_star' || pattern === 'marubozu') {
+                        color = defaultColors.bearish.main;
+                    } else {
+                        color = defaultColors.neutral.main;
+                    }
+                }
+                
+                statsHtml += `
+                    <div class="stat-card">
+                        <div class="stat-value" style="color: ${color}">${count}</div>
+                        <div class="stat-label">${displayName}</div>
+                    </div>
+                `;
+            });
+            
+            statsContainer.innerHTML = statsHtml;
         }
         
         // Initialize when page loads
