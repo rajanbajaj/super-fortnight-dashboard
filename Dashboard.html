@@ -625,6 +625,11 @@
             width: 100%;
             height: 100%;
             border-radius: 10px;
+            cursor: crosshair;
+        }
+        
+        #candlestickChart:active {
+            cursor: grabbing;
         }
         
         .stats {
@@ -908,6 +913,42 @@
                         Show Minimize Buttons
                     </label>
                 </div>
+                
+                <div class="overlay-settings-group">
+                    <button class="overlay-panel-btn" onclick="resetZoom()" style="width: 100%; padding: 8px; font-size: 12px;">
+                        🔄 Reset Zoom
+                    </button>
+                </div>
+                
+                <div class="overlay-settings-group">
+                    <button class="overlay-panel-btn" onclick="resetVisibleRange()" style="width: 100%; padding: 8px; font-size: 12px;">
+                        📊 Go to Latest Data
+                    </button>
+                </div>
+                
+                <div class="overlay-settings-group">
+                    <label>Max Visible Points</label>
+                    <input type="range" id="maxVisiblePoints" min="10" max="200" step="10" value="50" onchange="updateMaxVisiblePoints()">
+                    <div class="overlay-settings-value" id="maxVisiblePointsValue">50</div>
+                </div>
+                
+                <div class="overlay-settings-group">
+                    <label style="font-weight: 600; color: #00ff88; margin-bottom: 8px;">Keyboard Shortcuts</label>
+                    <div style="font-size: 10px; color: #ccc; line-height: 1.4;">
+                        <div>1-4: Set visible points (20, 50, 100, 200)</div>
+                        <div>← →: Pan left/right</div>
+                        <div>Home: Go to latest data</div>
+                        <div>End: Go to earliest data</div>
+                        <div>Mouse wheel: Zoom</div>
+                        <div>Click & drag: Pan range</div>
+                    </div>
+                </div>
+                
+                <div class="overlay-settings-group">
+                    <button class="overlay-panel-btn" onclick="debugChart()" style="width: 100%; padding: 8px; font-size: 12px;">
+                        🐛 Debug Chart
+                    </button>
+                </div>
             </div>
         </div>
         
@@ -1056,6 +1097,27 @@
         let canvas, ctx;
         let chartArea = { x: 80, y: 60, width: 0, height: 0 };
         
+        // Interactive chart variables
+        let isMouseDown = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        let panOffsetX = 0;
+        let panOffsetY = 0;
+        let zoomLevel = 1;
+        let zoomCenterX = 0;
+        let zoomCenterY = 0;
+        let hoveredIndex = -1;
+        let crosshairX = -1;
+        let crosshairY = -1;
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        
+        // Range-based panning variables
+        let visibleStartIndex = 0;
+        let visibleEndIndex = 0;
+        let maxVisiblePoints = 50; // Number of data points to show at once
+        
         // Cluster colors - vibrant and distinct
         const clusterColors = {
             0: { main: '#00ff88', shadow: 'rgba(0, 255, 136, 0.3)' },
@@ -1177,6 +1239,7 @@
         // Initialize the application
         function init() {
             setupCanvas();
+            setupInteractiveChart(); // Set up interactive features
             generateSampleData(); // Start with sample data
             syncOverlayControls(); // Sync overlay controls with main controls
             updateControlVisibility();
@@ -1184,10 +1247,14 @@
             updateLegend();
             updateChart();
             
+            // Initialize visible range after data is loaded
+            initializeVisibleRange();
+            
             // Initialize settings
             updatePanelOpacity();
             updateMinimizeButtons();
             updatePanelVisibility();
+            updateMaxVisiblePoints();
         }
 
         function showStatus(message, type = 'info') {
@@ -1398,11 +1465,18 @@
         
         function setupCanvas() {
             canvas = document.getElementById('candlestickChart');
+            if (!canvas) {
+                console.error('Canvas element not found!');
+                return;
+            }
+            
             ctx = canvas.getContext('2d');
             
-            // Set 8K resolution
-            canvas.width = 7680;  // 8K width
-            canvas.height = 4320; // 8K height
+            // Set reasonable resolution for better performance
+            const container = canvas.parentElement;
+            const rect = container.getBoundingClientRect();
+            canvas.width = rect.width * 2; // 2x for high-DPI
+            canvas.height = rect.height * 2; // 2x for high-DPI
             canvas.style.width = '100%';
             canvas.style.height = '100%';
             
@@ -1413,6 +1487,7 @@
             // Set up high-DPI rendering
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
+            
         }
         
         function updateChart() {
@@ -1426,6 +1501,11 @@
             updateStats();
             updateOverlayStats();
             updateOverlayLegend();
+        }
+        
+        function redrawChart() {
+            // Just redraw the chart without recalculating data
+            drawChart();
         }
         
         function updateControlVisibility() {
@@ -1523,6 +1603,11 @@
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
+            // Apply zoom and pan transformations
+            ctx.save();
+            ctx.translate(panOffsetX, panOffsetY);
+            ctx.scale(zoomLevel, zoomLevel);
+            
             const chartType = document.getElementById('chartType').value;
             
             if (chartType === 'candlestick') {
@@ -1534,37 +1619,52 @@
             } else if (chartType === 'histogram') {
                 drawHistogramChart();
             }
+            
+            ctx.restore();
+            
+            // Draw interactive elements (not affected by zoom/pan)
+            drawCrosshair();
+            drawTooltip();
         }
         
         function drawCandlestickChart() {
             const candleWidth = parseInt(document.getElementById('candleWidth').value);
             const showVolume = document.getElementById('showVolume').value === 'true';
             
-            // Calculate scales
-            const priceData = filteredData.map(d => [d.high, d.low]).flat();
+            // Get visible data range
+            const visibleData = filteredData.filter(d => d.visible);
+            if (visibleData.length === 0) return;
+            
+            // Update visible range if needed
+            updateVisibleRange();
+            
+            // Get the data points to display
+            const displayData = visibleData.slice(visibleStartIndex, visibleEndIndex + 1);
+            if (displayData.length === 0) return;
+            
+            // Calculate scales based on visible data
+            const priceData = displayData.map(d => [d.high, d.low]).flat();
             const maxPrice = Math.max(...priceData);
             const minPrice = Math.min(...priceData);
             const priceRange = maxPrice - minPrice;
             const padding = priceRange * 0.1;
             
-            const volumeData = filteredData.map(d => d.volume);
+            const volumeData = displayData.map(d => d.volume);
             const maxVolume = Math.max(...volumeData);
             
             const chartHeight = showVolume ? chartArea.height * 0.7 : chartArea.height;
             const volumeHeight = showVolume ? chartArea.height * 0.25 : 0;
             
-            const xStep = chartArea.width / filteredData.length;
+            const xStep = chartArea.width / displayData.length;
             
             // Draw grid
             drawGrid(minPrice - padding, maxPrice + padding, chartHeight);
             
             // Draw candlesticks
-            filteredData.forEach((data, i) => {
+            displayData.forEach((data, i) => {
                 const x = chartArea.x + i * xStep + xStep / 2;
                 const color = getDataColor(data);
                 
-                // Only draw if visible
-                if (data.visible) {
                 drawCandlestick(
                     x, 
                     data.open, 
@@ -1589,7 +1689,6 @@
                         candleWidth,
                         color
                     );
-                    }
                 }
             });
             
@@ -2811,6 +2910,449 @@
             }
         });
         
+        // Interactive chart functions
+        function setupInteractiveChart() {
+            if (!canvas) {
+                console.error('Canvas not found for interactive setup');
+                return;
+            }
+            
+            // Mouse events
+            canvas.addEventListener('mousedown', handleMouseDown);
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseup', handleMouseUp);
+            canvas.addEventListener('wheel', handleWheel);
+            canvas.addEventListener('mouseleave', handleMouseLeave);
+            
+            // Touch events for mobile
+            canvas.addEventListener('touchstart', handleTouchStart);
+            canvas.addEventListener('touchmove', handleTouchMove);
+            canvas.addEventListener('touchend', handleTouchEnd);
+        }
+        
+        function handleMouseDown(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            isMouseDown = true;
+            isDragging = true;
+            lastMouseX = (e.clientX - rect.left) * scaleX;
+            lastMouseY = (e.clientY - rect.top) * scaleY;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            canvas.style.cursor = 'grabbing';
+        }
+        
+        function handleMouseMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+            
+            // Update crosshair (in display coordinates)
+            crosshairX = e.clientX - rect.left;
+            crosshairY = e.clientY - rect.top;
+            
+            // Check if hovering over a data point
+            const newHoveredIndex = getHoveredDataIndex(mouseX, mouseY);
+            const hoverChanged = newHoveredIndex !== hoveredIndex;
+            hoveredIndex = newHoveredIndex;
+            
+            if (isMouseDown && isDragging) {
+                // Pan the visible range of the chart
+                const deltaX = mouseX - lastMouseX;
+                const deltaY = mouseY - lastMouseY;
+                
+                // Use horizontal movement to pan through data range
+                panVisibleRange(deltaX);
+                
+                // Use vertical movement for price panning (optional)
+                panOffsetY += deltaY;
+                
+                lastMouseX = mouseX;
+                lastMouseY = mouseY;
+                
+                updateChart(); // Full update to show new data range
+            } else if (hoverChanged) {
+                // Only redraw when hover state changes
+                redrawChart();
+            }
+        }
+        
+        function handleMouseUp(e) {
+            isMouseDown = false;
+            isDragging = false;
+            canvas.style.cursor = 'crosshair';
+        }
+        
+        function handleWheel(e) {
+            e.preventDefault();
+            
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+            
+            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            const newZoomLevel = Math.max(0.1, Math.min(10, zoomLevel * zoomFactor));
+            
+            // Zoom towards mouse position
+            const zoomRatio = newZoomLevel / zoomLevel;
+            panOffsetX = mouseX - (mouseX - panOffsetX) * zoomRatio;
+            panOffsetY = mouseY - (mouseY - panOffsetY) * zoomRatio;
+            
+            zoomLevel = newZoomLevel;
+            redrawChart();
+        }
+        
+        function handleMouseLeave(e) {
+            hoveredIndex = -1;
+            crosshairX = -1;
+            crosshairY = -1;
+            redrawChart();
+        }
+        
+        function handleTouchStart(e) {
+            e.preventDefault();
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                
+                lastMouseX = (touch.clientX - rect.left) * scaleX;
+                lastMouseY = (touch.clientY - rect.top) * scaleY;
+                isMouseDown = true;
+                isDragging = true;
+            }
+        }
+        
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (e.touches.length === 1 && isMouseDown) {
+                const touch = e.touches[0];
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                
+                const mouseX = (touch.clientX - rect.left) * scaleX;
+                const mouseY = (touch.clientY - rect.top) * scaleY;
+                
+                const deltaX = mouseX - lastMouseX;
+                const deltaY = mouseY - lastMouseY;
+                
+                panOffsetX += deltaX;
+                panOffsetY += deltaY;
+                
+                lastMouseX = mouseX;
+                lastMouseY = mouseY;
+                
+                redrawChart();
+            }
+        }
+        
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            isMouseDown = false;
+            isDragging = false;
+        }
+        
+        function getHoveredDataIndex(mouseX, mouseY) {
+            if (filteredData.length === 0) return -1;
+            
+            const chartType = document.getElementById('chartType').value;
+            const visibleData = filteredData.filter(d => d.visible);
+            
+            if (visibleData.length === 0) return -1;
+            
+            // Update visible range if needed
+            updateVisibleRange();
+            
+            // Get the data points to display
+            const displayData = visibleData.slice(visibleStartIndex, visibleEndIndex + 1);
+            if (displayData.length === 0) return -1;
+            
+            // Transform mouse coordinates to account for zoom and pan
+            const transformedX = (mouseX - panOffsetX) / zoomLevel;
+            const transformedY = (mouseY - panOffsetY) / zoomLevel;
+            
+            // Check if mouse is within chart area
+            if (transformedX < chartArea.x || transformedX > chartArea.x + chartArea.width ||
+                transformedY < chartArea.y || transformedY > chartArea.y + chartArea.height) {
+                return -1;
+            }
+            
+            // Calculate data spacing based on visible data
+            const dataWidth = chartArea.width / displayData.length;
+            const dataIndex = Math.floor((transformedX - chartArea.x) / dataWidth);
+            
+            if (dataIndex >= 0 && dataIndex < displayData.length) {
+                const data = displayData[dataIndex];
+                const x = chartArea.x + dataIndex * dataWidth;
+                
+                // Check if mouse is within the data point bounds
+                if (chartType === 'candlestick') {
+                    const candleWidth = parseInt(document.getElementById('candleWidth').value);
+                    if (Math.abs(transformedX - x) <= candleWidth / 2) {
+                        return visibleStartIndex + dataIndex; // Return global index
+                    }
+                } else {
+                    if (Math.abs(transformedX - x) <= dataWidth / 2) {
+                        return visibleStartIndex + dataIndex; // Return global index
+                    }
+                }
+            }
+            
+            return -1;
+        }
+        
+        function drawCrosshair() {
+            if (crosshairX < 0 || crosshairY < 0) return;
+            
+            // Scale crosshair coordinates to canvas resolution
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            const scaledX = crosshairX * scaleX;
+            const scaledY = crosshairY * scaleY;
+            
+            // Check if crosshair is within chart area
+            if (scaledX < chartArea.x || scaledX > chartArea.x + chartArea.width ||
+                scaledY < chartArea.y || scaledY > chartArea.y + chartArea.height) {
+                return;
+            }
+            
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            
+            // Vertical line
+            ctx.beginPath();
+            ctx.moveTo(scaledX, chartArea.y);
+            ctx.lineTo(scaledX, chartArea.y + chartArea.height);
+            ctx.stroke();
+            
+            // Horizontal line
+            ctx.beginPath();
+            ctx.moveTo(chartArea.x, scaledY);
+            ctx.lineTo(chartArea.x + chartArea.width, scaledY);
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+        
+        function drawTooltip() {
+            if (hoveredIndex < 0 || filteredData.length === 0) return;
+            
+            const visibleData = filteredData.filter(d => d.visible);
+            if (hoveredIndex >= visibleData.length) return;
+            
+            const data = visibleData[hoveredIndex];
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = crosshairX;
+            const mouseY = crosshairY;
+            
+            // Tooltip content
+            const tooltipText = [
+                `Time: ${new Date(data.timestamp).toLocaleString()}`,
+                `Open: ${data.open.toFixed(2)}`,
+                `High: ${data.high.toFixed(2)}`,
+                `Low: ${data.low.toFixed(2)}`,
+                `Close: ${data.close.toFixed(2)}`,
+                `Volume: ${data.volume.toLocaleString()}`,
+                `Cluster: ${data.predicted_cluster || 0}`
+            ];
+            
+            // Calculate tooltip dimensions
+            ctx.font = '12px Arial';
+            const lineHeight = 16;
+            const padding = 8;
+            const maxWidth = Math.max(...tooltipText.map(text => ctx.measureText(text).width));
+            const tooltipWidth = maxWidth + padding * 2;
+            const tooltipHeight = tooltipText.length * lineHeight + padding * 2;
+            
+            // Position tooltip
+            let tooltipX = mouseX + 10;
+            let tooltipY = mouseY - tooltipHeight / 2;
+            
+            // Keep tooltip within canvas bounds
+            if (tooltipX + tooltipWidth > rect.width) {
+                tooltipX = mouseX - tooltipWidth - 10;
+            }
+            if (tooltipY < 0) {
+                tooltipY = 10;
+            }
+            if (tooltipY + tooltipHeight > rect.height) {
+                tooltipY = rect.height - tooltipHeight - 10;
+            }
+            
+            // Draw tooltip background
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+            ctx.fillRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+            
+            // Draw tooltip border
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+            
+            // Draw tooltip text
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'left';
+            tooltipText.forEach((text, index) => {
+                ctx.fillText(text, tooltipX + padding, tooltipY + padding + (index + 1) * lineHeight);
+            });
+            
+            ctx.restore();
+        }
+        
+        function resetZoom() {
+            zoomLevel = 1;
+            panOffsetX = 0;
+            panOffsetY = 0;
+            updateChart();
+        }
+        
+        function resetVisibleRange() {
+            const visibleData = filteredData.filter(d => d.visible);
+            if (visibleData.length === 0) return;
+            
+            // Reset to show the most recent data
+            visibleEndIndex = visibleData.length - 1;
+            visibleStartIndex = Math.max(0, visibleEndIndex - maxVisiblePoints + 1);
+            
+            console.log('Reset visible range to latest data:', visibleStartIndex, 'to', visibleEndIndex);
+            updateChart();
+        }
+        
+        function initializeVisibleRange() {
+            const visibleData = filteredData.filter(d => d.visible);
+            if (visibleData.length === 0) return;
+            
+            // Initialize visible range to show the last maxVisiblePoints
+            visibleEndIndex = visibleData.length - 1;
+            visibleStartIndex = Math.max(0, visibleEndIndex - maxVisiblePoints + 1);
+            
+            // Ensure we don't exceed the available data
+            if (visibleEndIndex >= visibleData.length) {
+                visibleEndIndex = visibleData.length - 1;
+                visibleStartIndex = Math.max(0, visibleEndIndex - maxVisiblePoints + 1);
+            }
+            
+            console.log('Initialized visible range:', visibleStartIndex, 'to', visibleEndIndex, 'out of', visibleData.length, 'total data points');
+        }
+        
+        function updateVisibleRange() {
+            const visibleData = filteredData.filter(d => d.visible);
+            if (visibleData.length === 0) return;
+            
+            // Adjust maxVisiblePoints based on zoom level
+            const adjustedMaxPoints = Math.max(10, Math.floor(maxVisiblePoints / zoomLevel));
+            
+            // Ensure visible range is within bounds
+            visibleStartIndex = Math.max(0, Math.min(visibleStartIndex, visibleData.length - 1));
+            visibleEndIndex = Math.max(visibleStartIndex, Math.min(visibleEndIndex, visibleData.length - 1));
+            
+            // Ensure we don't exceed the available data
+            if (visibleEndIndex - visibleStartIndex + 1 > adjustedMaxPoints) {
+                visibleEndIndex = visibleStartIndex + adjustedMaxPoints - 1;
+            }
+            
+            // Ensure we don't go beyond available data
+            if (visibleEndIndex >= visibleData.length) {
+                visibleEndIndex = visibleData.length - 1;
+                visibleStartIndex = Math.max(0, visibleEndIndex - adjustedMaxPoints + 1);
+            }
+        }
+        
+        function panVisibleRange(deltaX) {
+            const visibleData = filteredData.filter(d => d.visible);
+            if (visibleData.length === 0) return;
+            
+            // Calculate how many data points to move based on drag distance
+            const dataWidth = chartArea.width / (visibleEndIndex - visibleStartIndex + 1);
+            const pointsToMove = Math.round(deltaX / dataWidth);
+            
+            // Make panning more sensitive for better user experience
+            const sensitivity = Math.max(1, Math.abs(pointsToMove));
+            const actualMove = pointsToMove > 0 ? sensitivity : -sensitivity;
+            
+            // Update visible range
+            const newStartIndex = Math.max(0, visibleStartIndex - actualMove);
+            const newEndIndex = Math.min(visibleData.length - 1, newStartIndex + (visibleEndIndex - visibleStartIndex));
+            
+            // Ensure we don't go beyond available data
+            if (newEndIndex >= visibleData.length) {
+                const adjustedEndIndex = visibleData.length - 1;
+                const adjustedStartIndex = Math.max(0, adjustedEndIndex - (visibleEndIndex - visibleStartIndex));
+                visibleStartIndex = adjustedStartIndex;
+                visibleEndIndex = adjustedEndIndex;
+            } else {
+                visibleStartIndex = newStartIndex;
+                visibleEndIndex = newEndIndex;
+            }
+            
+            console.log('Panned visible range to:', visibleStartIndex, 'to', visibleEndIndex);
+        }
+        
+        function updateMaxVisiblePoints() {
+            const slider = document.getElementById('maxVisiblePoints');
+            const valueDisplay = document.getElementById('maxVisiblePointsValue');
+            
+            maxVisiblePoints = parseInt(slider.value);
+            valueDisplay.textContent = maxVisiblePoints;
+            
+            // Recalculate visible range with new max points
+            const visibleData = filteredData.filter(d => d.visible);
+            if (visibleData.length === 0) return;
+            
+            // Adjust maxVisiblePoints based on zoom level
+            const adjustedMaxPoints = Math.max(10, Math.floor(maxVisiblePoints / zoomLevel));
+            
+            // Keep the current end index but adjust start index to fit new max points
+            const currentRangeSize = visibleEndIndex - visibleStartIndex + 1;
+            const newRangeSize = Math.min(adjustedMaxPoints, visibleData.length);
+            
+            if (newRangeSize < currentRangeSize) {
+                // Shrink the range from the start
+                visibleStartIndex = Math.max(0, visibleEndIndex - newRangeSize + 1);
+            } else if (newRangeSize > currentRangeSize) {
+                // Expand the range from the start
+                visibleStartIndex = Math.max(0, visibleEndIndex - newRangeSize + 1);
+            }
+            
+            // Ensure we don't go beyond available data
+            if (visibleEndIndex >= visibleData.length) {
+                visibleEndIndex = visibleData.length - 1;
+                visibleStartIndex = Math.max(0, visibleEndIndex - newRangeSize + 1);
+            }
+            
+            console.log('Updated max visible points to:', maxVisiblePoints, 'adjusted to:', adjustedMaxPoints);
+            console.log('New visible range:', visibleStartIndex, 'to', visibleEndIndex);
+            
+            updateChart();
+        }
+        
+        function debugChart() {
+            console.log('Chart Debug Info:');
+            console.log('Total data:', stockData.length);
+            console.log('Filtered data:', filteredData.length);
+            console.log('Visible data:', filteredData.filter(d => d.visible).length);
+            console.log('Visible range:', visibleStartIndex, 'to', visibleEndIndex);
+            console.log('Max visible points:', maxVisiblePoints);
+            console.log('Zoom level:', zoomLevel);
+            console.log('Pan offset:', panOffsetX, panOffsetY);
+            console.log('Chart area:', chartArea);
+            console.log('Canvas size:', canvas.width, canvas.height);
+        }
+        
         // Initialize when page loads
         window.addEventListener('load', init);
         
@@ -2819,6 +3361,90 @@
             setupCanvas();
             updateChart();
         });
+        
+        // Handle keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Only handle shortcuts when not typing in input fields
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            
+            switch(e.key) {
+                case '1':
+                    setMaxVisiblePoints(20);
+                    break;
+                case '2':
+                    setMaxVisiblePoints(50);
+                    break;
+                case '3':
+                    setMaxVisiblePoints(100);
+                    break;
+                case '4':
+                    setMaxVisiblePoints(200);
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    panVisibleRange(-10); // Pan left
+                    updateChart();
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    panVisibleRange(10); // Pan right
+                    updateChart();
+                    break;
+                case 'Home':
+                    e.preventDefault();
+                    resetVisibleRange(); // Go to latest data
+                    break;
+                case 'End':
+                    e.preventDefault();
+                    // Go to earliest data
+                    const visibleData = filteredData.filter(d => d.visible);
+                    if (visibleData.length > 0) {
+                        visibleStartIndex = 0;
+                        visibleEndIndex = Math.min(maxVisiblePoints - 1, visibleData.length - 1);
+                        updateChart();
+                    }
+                    break;
+            }
+        });
+        
+        function setMaxVisiblePoints(value) {
+            const slider = document.getElementById('maxVisiblePoints');
+            const valueDisplay = document.getElementById('maxVisiblePointsValue');
+            
+            slider.value = value;
+            maxVisiblePoints = value;
+            valueDisplay.textContent = value;
+            
+            // Recalculate visible range with new max points
+            const visibleData = filteredData.filter(d => d.visible);
+            if (visibleData.length === 0) return;
+            
+            // Adjust maxVisiblePoints based on zoom level
+            const adjustedMaxPoints = Math.max(10, Math.floor(maxVisiblePoints / zoomLevel));
+            
+            // Keep the current end index but adjust start index to fit new max points
+            const currentRangeSize = visibleEndIndex - visibleStartIndex + 1;
+            const newRangeSize = Math.min(adjustedMaxPoints, visibleData.length);
+            
+            if (newRangeSize < currentRangeSize) {
+                // Shrink the range from the start
+                visibleStartIndex = Math.max(0, visibleEndIndex - newRangeSize + 1);
+            } else if (newRangeSize > currentRangeSize) {
+                // Expand the range from the start
+                visibleStartIndex = Math.max(0, visibleEndIndex - newRangeSize + 1);
+            }
+            
+            // Ensure we don't go beyond available data
+            if (visibleEndIndex >= visibleData.length) {
+                visibleEndIndex = visibleData.length - 1;
+                visibleStartIndex = Math.max(0, visibleEndIndex - newRangeSize + 1);
+            }
+            
+            console.log('Set max visible points to:', maxVisiblePoints, 'adjusted to:', adjustedMaxPoints);
+            console.log('New visible range:', visibleStartIndex, 'to', visibleEndIndex);
+            
+            updateChart();
+        }
     </script>
 </body>
 </html>
