@@ -959,6 +959,7 @@
                         <div>+/-: Increase/decrease panning sensitivity</div>
                         <div>R: Reset chart to default</div>
                         <div>C: Toggle crosshair on/off</div>
+                        <div>S: Toggle crosshair snap to candles</div>
                     </div>
                 </div>
                 
@@ -1145,6 +1146,7 @@
         let lastCrosshairX = -1;
         let lastCrosshairY = -1;
         let crosshairEnabled = true;
+        let crosshairSnapToCandles = true;
         let crosshairAnimationFrame = null;
         let isDragging = false;
         let dragStartX = 0;
@@ -3026,14 +3028,30 @@
             const mouseX = (e.clientX - rect.left) * scaleX;
             const mouseY = (e.clientY - rect.top) * scaleY;
             
-            // Update crosshair (in display coordinates)
-            crosshairX = e.clientX - rect.left;
-            crosshairY = e.clientY - rect.top;
+            let hoverChanged = false;
             
-            // Check if hovering over a data point
-            const newHoveredIndex = getHoveredDataIndex(mouseX, mouseY);
-            const hoverChanged = newHoveredIndex !== hoveredIndex;
-            hoveredIndex = newHoveredIndex;
+            // Snap crosshair to nearest candle if enabled
+            if (crosshairSnapToCandles) {
+                const snapped = snapCrosshairToCandle(mouseX, mouseY);
+                
+                // Update crosshair (in display coordinates)
+                crosshairX = snapped.x / scaleX; // Convert back to display coordinates
+                crosshairY = e.clientY - rect.top;
+                
+                // Update hovered index based on snapped position
+                const newHoveredIndex = snapped.index;
+                hoverChanged = newHoveredIndex !== hoveredIndex;
+                hoveredIndex = newHoveredIndex;
+            } else {
+                // Update crosshair (in display coordinates) without snapping
+                crosshairX = e.clientX - rect.left;
+                crosshairY = e.clientY - rect.top;
+                
+                // Check if hovering over a data point
+                const newHoveredIndex = getHoveredDataIndex(mouseX, mouseY);
+                hoverChanged = newHoveredIndex !== hoveredIndex;
+                hoveredIndex = newHoveredIndex;
+            }
             
             if (isMouseDown && isDragging) {
                 // Pan the visible range of the chart
@@ -3105,8 +3123,25 @@
         function handleMouseEnter(e) {
             // Initialize crosshair position when mouse enters canvas
             const rect = canvas.getBoundingClientRect();
-            crosshairX = e.clientX - rect.left;
-            crosshairY = e.clientY - rect.top;
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+            
+            // Snap crosshair to nearest candle if enabled
+            if (crosshairSnapToCandles) {
+                const snapped = snapCrosshairToCandle(mouseX, mouseY);
+                
+                crosshairX = snapped.x / scaleX; // Convert back to display coordinates
+                crosshairY = e.clientY - rect.top;
+                hoveredIndex = snapped.index;
+            } else {
+                crosshairX = e.clientX - rect.left;
+                crosshairY = e.clientY - rect.top;
+                hoveredIndex = getHoveredDataIndex(mouseX, mouseY);
+            }
+            
             redrawChart();
         }
         
@@ -3261,16 +3296,37 @@
             ctx.arc(scaledX, scaledY, 2.5, 0, 2 * Math.PI);
             ctx.stroke();
             
+            // Draw candle highlight if hovering over a candle
+            if (hoveredIndex >= 0) {
+                const visibleData = filteredData.filter(d => d.visible);
+                const displayData = visibleData.slice(visibleStartIndex, visibleEndIndex + 1);
+                const xStep = chartArea.width / displayData.length;
+                
+                // Find which candle we're hovering over
+                const candleIndex = hoveredIndex - visibleStartIndex;
+                if (candleIndex >= 0 && candleIndex < displayData.length) {
+                    const candleX = chartArea.x + candleIndex * xStep + xStep / 2;
+                    
+                    // Draw a subtle highlight around the candle
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([]);
+                    ctx.beginPath();
+                    ctx.rect(candleX - xStep/2, chartArea.y, xStep, chartArea.height);
+                    ctx.stroke();
+                }
+            }
+            
             ctx.restore();
         }
         
         function drawTooltip() {
             if (hoveredIndex < 0 || filteredData.length === 0) return;
             
-            const visibleData = filteredData.filter(d => d.visible);
-            if (hoveredIndex >= visibleData.length) return;
+            // Use the original filteredData array with the correct index
+            if (hoveredIndex >= filteredData.length) return;
             
-            const data = visibleData[hoveredIndex];
+            const data = filteredData[hoveredIndex];
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
@@ -3476,7 +3532,8 @@
                 panOffsetY: panOffsetY,
                 visibleStartIndex: visibleStartIndex,
                 visibleEndIndex: visibleEndIndex,
-                crosshairEnabled: crosshairEnabled
+                crosshairEnabled: crosshairEnabled,
+                crosshairSnapToCandles: crosshairSnapToCandles
             };
             
             localStorage.setItem('chartSettings', JSON.stringify(settings));
@@ -3578,6 +3635,10 @@
                     crosshairEnabled = settings.crosshairEnabled;
                 }
                 
+                if (settings.crosshairSnapToCandles !== undefined) {
+                    crosshairSnapToCandles = settings.crosshairSnapToCandles;
+                }
+                
                 return true;
             } catch (error) {
                 console.error('Error loading settings:', error);
@@ -3600,6 +3661,16 @@
             redrawChart();
         }
         
+        function toggleCrosshairSnap() {
+            crosshairSnapToCandles = !crosshairSnapToCandles;
+            if (crosshairSnapToCandles) {
+                showStatus('🎯 Crosshair snap to candles enabled', 'success');
+            } else {
+                showStatus('🎯 Crosshair snap to candles disabled', 'info');
+            }
+            redrawChart();
+        }
+        
         function updateCrosshairSmoothly() {
             if (crosshairAnimationFrame) {
                 cancelAnimationFrame(crosshairAnimationFrame);
@@ -3613,6 +3684,42 @@
                 }
                 crosshairAnimationFrame = null;
             });
+        }
+        
+        function snapCrosshairToCandle(mouseX, mouseY) {
+            const visibleData = filteredData.filter(d => d.visible);
+            if (visibleData.length === 0) return { x: mouseX, y: mouseY, index: -1 };
+            
+            // Get the data points to display (same logic as drawCandlestickChart)
+            const displayData = visibleData.slice(visibleStartIndex, visibleEndIndex + 1);
+            if (displayData.length === 0) return { x: mouseX, y: mouseY, index: -1 };
+            
+            const xStep = chartArea.width / displayData.length;
+            
+            // Find the nearest candle position
+            let nearestIndex = -1;
+            let minDistance = Infinity;
+            
+            for (let i = 0; i < displayData.length; i++) {
+                const candleX = chartArea.x + i * xStep + xStep / 2;
+                const distance = Math.abs(mouseX - candleX);
+                
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestIndex = i;
+                }
+            }
+            
+            if (nearestIndex >= 0) {
+                const snappedX = chartArea.x + nearestIndex * xStep + xStep / 2;
+                return { 
+                    x: snappedX, 
+                    y: mouseY, 
+                    index: visibleStartIndex + nearestIndex 
+                };
+            }
+            
+            return { x: mouseX, y: mouseY, index: -1 };
         }
         
         function saveSettingsWithNotification() {
@@ -3893,6 +4000,11 @@
                 case 'C':
                     e.preventDefault();
                     toggleCrosshair();
+                    break;
+                case 's':
+                case 'S':
+                    e.preventDefault();
+                    toggleCrosshairSnap();
                     break;
             }
         });
