@@ -862,6 +862,8 @@
         <div class="settings-container">
             <!-- Settings Button -->
             <div class="overlay-settings" onclick="toggleSettings()">⚙️ Settings</div>
+            <!-- Reset Button -->
+            <div class="overlay-settings" onclick="resetChartToDefault()" style="margin-left: 10px;">🔄 Reset</div>
             
             <!-- Settings Panel -->
             <div class="overlay-settings-panel hidden" id="overlaySettingsPanel">
@@ -952,8 +954,11 @@
                         <div>Home: Go to latest data</div>
                         <div>End: Go to earliest data</div>
                         <div>Mouse wheel: Zoom</div>
+                        <div>Ctrl/Shift+Mouse wheel: Adjust visible points</div>
+                        <div>Page Up/Down: Adjust visible points</div>
                         <div>Drag left/right: Pan through time</div>
                         <div>+/-: Increase/decrease panning sensitivity</div>
+                        <div>R: Reset chart to default</div>
                     </div>
                 </div>
                 
@@ -2933,8 +2938,9 @@
         document.addEventListener('click', (e) => {
             const settingsPanel = document.getElementById('overlaySettingsPanel');
             const settingsButton = document.querySelector('.overlay-settings');
+            const resetButton = document.querySelector('.overlay-settings[onclick="resetChartToDefault()"]');
             
-            if (!settingsPanel.contains(e.target) && !settingsButton.contains(e.target)) {
+            if (!settingsPanel.contains(e.target) && !settingsButton.contains(e.target) && !resetButton.contains(e.target)) {
                 settingsPanel.classList.add('hidden');
             }
         });
@@ -3030,16 +3036,31 @@
             const mouseX = (e.clientX - rect.left) * scaleX;
             const mouseY = (e.clientY - rect.top) * scaleY;
             
-            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-            const newZoomLevel = Math.max(0.1, Math.min(10, zoomLevel * zoomFactor));
-            
-            // Zoom towards mouse position
-            const zoomRatio = newZoomLevel / zoomLevel;
-            panOffsetX = mouseX - (mouseX - panOffsetX) * zoomRatio;
-            panOffsetY = mouseY - (mouseY - panOffsetY) * zoomRatio;
-            
-            zoomLevel = newZoomLevel;
-            redrawChart();
+            // Check if Ctrl/Cmd or Shift key is held for max visible points adjustment
+            if (e.ctrlKey || e.metaKey || e.shiftKey) {
+                // Adjust max visible points with scroll
+                const currentMaxPoints = parseInt(document.getElementById('maxVisiblePoints').value);
+                const step = 10; // Adjust by 10 points per scroll
+                const newMaxPoints = e.deltaY > 0 
+                    ? Math.max(10, currentMaxPoints - step) 
+                    : Math.min(200, currentMaxPoints + step);
+                
+                // Update the slider and trigger the update function
+                document.getElementById('maxVisiblePoints').value = newMaxPoints;
+                updateMaxVisiblePoints();
+            } else {
+                // Normal zoom behavior
+                const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+                const newZoomLevel = Math.max(0.1, Math.min(10, zoomLevel * zoomFactor));
+                
+                // Zoom towards mouse position
+                const zoomRatio = newZoomLevel / zoomLevel;
+                panOffsetX = mouseX - (mouseX - panOffsetX) * zoomRatio;
+                panOffsetY = mouseY - (mouseY - panOffsetY) * zoomRatio;
+                
+                zoomLevel = newZoomLevel;
+                redrawChart();
+            }
         }
         
         function handleMouseLeave(e) {
@@ -3263,6 +3284,76 @@
             updateChart();
         }
         
+        function resetChartToDefault() {
+            // Reset all chart settings to default values
+            resetZoom();
+            resetVisibleRange();
+            
+            // Reset max visible points to default
+            document.getElementById('maxVisiblePoints').value = 50;
+            updateMaxVisiblePoints();
+            
+            // Reset panning sensitivity to default
+            document.getElementById('panningSensitivity').value = 1.0;
+            updatePanningSensitivity();
+            
+            // Reset panel opacity to default
+            document.getElementById('panelOpacity').value = 0.8;
+            updatePanelOpacity();
+            
+            // Reset all panel visibility to default (all visible)
+            const panelCheckboxes = [
+                'showChartPanel', 'showFiltersPanel', 'showColorsPanel', 
+                'showStatsPanel', 'showLegendPanel'
+            ];
+            panelCheckboxes.forEach(checkboxId => {
+                const checkbox = document.getElementById(checkboxId);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
+            updatePanelVisibility();
+            
+            // Reset minimize state
+            const minimizeButtons = document.querySelectorAll('.minimize-btn');
+            minimizeButtons.forEach(btn => {
+                btn.textContent = '−';
+                btn.parentElement.classList.remove('minimized');
+            });
+            updateMinimizeButtons();
+            
+            // Reset chart type to default
+            document.getElementById('chartType').value = 'candlestick';
+            
+            // Reset number of rows to default
+            document.getElementById('numRows').value = 200;
+            
+            // Reset candle width to default
+            document.getElementById('candleWidth').value = 8;
+            
+            // Reset cluster filter to all
+            document.getElementById('clusterFilter').value = 'all';
+            
+            // Reset candle type filter to all
+            document.getElementById('candleTypeFilter').value = 'all';
+            
+            // Reset candle pattern filter to all
+            document.getElementById('candlePatternFilter').value = 'all';
+            
+            // Reset cluster colors to show
+            document.getElementById('showClusterColors').checked = true;
+            
+            // Reset pattern color mode to default
+            document.getElementById('patternColorMode').value = 'bullish_bearish';
+            
+            // Update the chart with all reset values
+            updateChart();
+            updateStats();
+            updateLegend();
+            
+            showStatus('🔄 Chart reset to default settings', 'success');
+        }
+        
         function panToMiddle() {
             const visibleData = filteredData.filter(d => d.visible);
             if (visibleData.length === 0) return;
@@ -3426,6 +3517,18 @@
             }
         }
         
+        function adjustMaxVisiblePoints(delta) {
+            const slider = document.getElementById('maxVisiblePoints');
+            const valueDisplay = document.getElementById('maxVisiblePointsValue');
+            
+            if (slider && valueDisplay) {
+                const currentValue = parseInt(slider.value);
+                const newValue = Math.max(10, Math.min(200, currentValue + delta));
+                slider.value = newValue;
+                updateMaxVisiblePoints();
+            }
+        }
+        
         function debugChart() {
             // Debug chart function - can be used for debugging if needed
         }
@@ -3489,6 +3592,19 @@
                 case '-':
                     e.preventDefault();
                     adjustPanningSensitivity(-0.1);
+                    break;
+                case 'PageUp':
+                    e.preventDefault();
+                    adjustMaxVisiblePoints(10);
+                    break;
+                case 'PageDown':
+                    e.preventDefault();
+                    adjustMaxVisiblePoints(-10);
+                    break;
+                case 'r':
+                case 'R':
+                    e.preventDefault();
+                    resetChartToDefault();
                     break;
             }
         });
