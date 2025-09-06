@@ -795,9 +795,36 @@
             const xAxis = document.getElementById('xAxis').value;
             const yAxis = document.getElementById('yAxis').value;
             
-            // Get data for x and y axes
-            const xData = filteredData.map(d => d[xAxis]);
-            const yData = filteredData.map(d => d[yAxis]);
+            // Get data for x and y axes, handling timestamps specially
+            let xData, yData;
+            
+            if (xAxis === 'timestamp') {
+                // Convert timestamps to numeric values (milliseconds)
+                xData = filteredData.map(d => {
+                    if (d.date) {
+                        return d.date.getTime();
+                    } else if (d.timestamp) {
+                        return new Date(d.timestamp).getTime();
+                    }
+                    return 0;
+                });
+            } else {
+                xData = filteredData.map(d => d[xAxis]);
+            }
+            
+            if (yAxis === 'timestamp') {
+                // Convert timestamps to numeric values (milliseconds)
+                yData = filteredData.map(d => {
+                    if (d.date) {
+                        return d.date.getTime();
+                    } else if (d.timestamp) {
+                        return new Date(d.timestamp).getTime();
+                    }
+                    return 0;
+                });
+            } else {
+                yData = filteredData.map(d => d[yAxis]);
+            }
             
             const minX = Math.min(...xData);
             const maxX = Math.max(...xData);
@@ -818,8 +845,23 @@
                 if (data.visible) {
                     const color = getDataColor(data);
                     
-                    const x = chartArea.x + ((data[xAxis] - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
-                    const y = chartArea.y + chartArea.height - ((data[yAxis] - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
+                    // Get x and y values, handling timestamps
+                    let xValue, yValue;
+                    
+                    if (xAxis === 'timestamp') {
+                        xValue = data.date ? data.date.getTime() : new Date(data.timestamp).getTime();
+                    } else {
+                        xValue = data[xAxis];
+                    }
+                    
+                    if (yAxis === 'timestamp') {
+                        yValue = data.date ? data.date.getTime() : new Date(data.timestamp).getTime();
+                    } else {
+                        yValue = data[yAxis];
+                    }
+                    
+                    const x = chartArea.x + ((xValue - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
+                    const y = chartArea.y + chartArea.height - ((yValue - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
                     
                     // Draw point
                     ctx.fillStyle = color.main;
@@ -846,9 +888,36 @@
             const yAxis = document.getElementById('yAxis').value;
             const showClusterColors = document.getElementById('showClusterColors').checked;
             
-            // Get data for x and y axes
-            const xData = filteredData.map(d => d[xAxis]);
-            const yData = filteredData.map(d => d[yAxis]);
+            // Get data for x and y axes, handling timestamps specially
+            let xData, yData;
+            
+            if (xAxis === 'timestamp') {
+                // Convert timestamps to numeric values (milliseconds)
+                xData = filteredData.map(d => {
+                    if (d.date) {
+                        return d.date.getTime();
+                    } else if (d.timestamp) {
+                        return new Date(d.timestamp).getTime();
+                    }
+                    return 0;
+                });
+            } else {
+                xData = filteredData.map(d => d[xAxis]);
+            }
+            
+            if (yAxis === 'timestamp') {
+                // Convert timestamps to numeric values (milliseconds)
+                yData = filteredData.map(d => {
+                    if (d.date) {
+                        return d.date.getTime();
+                    } else if (d.timestamp) {
+                        return new Date(d.timestamp).getTime();
+                    }
+                    return 0;
+                });
+            } else {
+                yData = filteredData.map(d => d[yAxis]);
+            }
             
             const minX = Math.min(...xData);
             const maxX = Math.max(...xData);
@@ -873,9 +942,24 @@
                         if (!clusterGroups[cluster]) {
                             clusterGroups[cluster] = [];
                         }
+                        // Get x and y values, handling timestamps
+                        let xValue, yValue;
+                        
+                        if (xAxis === 'timestamp') {
+                            xValue = data.date ? data.date.getTime() : new Date(data.timestamp).getTime();
+                        } else {
+                            xValue = data[xAxis];
+                        }
+                        
+                        if (yAxis === 'timestamp') {
+                            yValue = data.date ? data.date.getTime() : new Date(data.timestamp).getTime();
+                        } else {
+                            yValue = data[yAxis];
+                        }
+                        
                         clusterGroups[cluster].push({
-                            x: data[xAxis],
-                            y: data[yAxis],
+                            x: xValue,
+                            y: yValue,
                             index: i
                         });
                     }
@@ -928,8 +1012,23 @@
                 filteredData.forEach((data, i) => {
                     // Only draw visible points
                     if (data.visible) {
-                        const x = chartArea.x + ((data[xAxis] - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
-                        const y = chartArea.y + chartArea.height - ((data[yAxis] - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
+                        // Get x and y values, handling timestamps
+                        let xValue, yValue;
+                        
+                        if (xAxis === 'timestamp') {
+                            xValue = data.date ? data.date.getTime() : new Date(data.timestamp).getTime();
+                        } else {
+                            xValue = data[xAxis];
+                        }
+                        
+                        if (yAxis === 'timestamp') {
+                            yValue = data.date ? data.date.getTime() : new Date(data.timestamp).getTime();
+                        } else {
+                            yValue = data[yAxis];
+                        }
+                        
+                        const x = chartArea.x + ((xValue - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
+                        const y = chartArea.y + chartArea.height - ((yValue - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
                         
                         if (firstPoint) {
                             ctx.moveTo(x, y);
@@ -946,8 +1045,23 @@
                 filteredData.forEach((data, i) => {
                     // Only draw visible points
                     if (data.visible) {
-                        const x = chartArea.x + ((data[xAxis] - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
-                        const y = chartArea.y + chartArea.height - ((data[yAxis] - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
+                        // Get x and y values, handling timestamps
+                        let xValue, yValue;
+                        
+                        if (xAxis === 'timestamp') {
+                            xValue = data.date ? data.date.getTime() : new Date(data.timestamp).getTime();
+                        } else {
+                            xValue = data[xAxis];
+                        }
+                        
+                        if (yAxis === 'timestamp') {
+                            yValue = data.date ? data.date.getTime() : new Date(data.timestamp).getTime();
+                        } else {
+                            yValue = data[yAxis];
+                        }
+                        
+                        const x = chartArea.x + ((xValue - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
+                        const y = chartArea.y + chartArea.height - ((yValue - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
                         const color = getDataColor(data);
                         
                         ctx.fillStyle = color.main;
@@ -1217,7 +1331,19 @@
             for (let i = 0; i <= 10; i++) {
                 const value = minY + (maxY - minY) * (i / 10);
                 const y = chartArea.y + chartArea.height - (i / 10) * chartArea.height;
-                ctx.fillText(value.toFixed(2), chartArea.x - 20, y + 15);
+                
+                // Format timestamp values differently
+                if (yLabel === 'timestamp') {
+                    const date = new Date(value);
+                    ctx.fillText(date.toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }), chartArea.x - 20, y + 15);
+                } else {
+                    ctx.fillText(value.toFixed(2), chartArea.x - 20, y + 15);
+                }
             }
             
             // X-axis labels
@@ -1225,7 +1351,19 @@
             for (let i = 0; i <= 10; i++) {
                 const value = minX + (maxX - minX) * (i / 10);
                 const x = chartArea.x + (i / 10) * chartArea.width;
-                ctx.fillText(value.toFixed(2), x, chartArea.y + chartArea.height + 50);
+                
+                // Format timestamp values differently
+                if (xLabel === 'timestamp') {
+                    const date = new Date(value);
+                    ctx.fillText(date.toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }), x, chartArea.y + chartArea.height + 50);
+                } else {
+                    ctx.fillText(value.toFixed(2), x, chartArea.y + chartArea.height + 50);
+                }
             }
             
             // Axis titles
