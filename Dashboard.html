@@ -735,7 +735,7 @@
             
             <div class="control-group">
                 <label for="numRows">Number of Rows:</label>
-                <input type="number" id="numRows" min="10" max="1000" value="200" onchange="updateChart()">
+                <input type="number" id="numRows" min="10" max="1000" value="200" onchange="handleNumRowsChange()">
             </div>
             
             <div class="control-group" id="candleWidthGroup">
@@ -927,20 +927,33 @@
                 </div>
                 
                 <div class="overlay-settings-group">
+                    <button class="overlay-panel-btn" onclick="panToMiddle()" style="width: 100%; padding: 8px; font-size: 12px;">
+                        🎯 Go to Middle
+                    </button>
+                </div>
+                
+                <div class="overlay-settings-group">
                     <label>Max Visible Points</label>
                     <input type="range" id="maxVisiblePoints" min="10" max="200" step="10" value="50" onchange="updateMaxVisiblePoints()">
                     <div class="overlay-settings-value" id="maxVisiblePointsValue">50</div>
                 </div>
                 
                 <div class="overlay-settings-group">
+                    <label>Panning Sensitivity</label>
+                    <input type="range" id="panningSensitivity" min="0.1" max="5" step="0.1" value="1" onchange="updatePanningSensitivity()">
+                    <div class="overlay-settings-value" id="panningSensitivityValue">1.0</div>
+                </div>
+                
+                <div class="overlay-settings-group">
                     <label style="font-weight: 600; color: #00ff88; margin-bottom: 8px;">Keyboard Shortcuts</label>
                     <div style="font-size: 10px; color: #ccc; line-height: 1.4;">
                         <div>1-4: Set visible points (20, 50, 100, 200)</div>
-                        <div>← →: Pan left/right</div>
+                        <div>← →: Pan to older/newer data</div>
                         <div>Home: Go to latest data</div>
                         <div>End: Go to earliest data</div>
                         <div>Mouse wheel: Zoom</div>
-                        <div>Click & drag: Pan range</div>
+                        <div>Drag left/right: Pan through time</div>
+                        <div>+/-: Increase/decrease panning sensitivity</div>
                     </div>
                 </div>
                 
@@ -1116,7 +1129,8 @@
         // Range-based panning variables
         let visibleStartIndex = 0;
         let visibleEndIndex = 0;
-        let maxVisiblePoints = 50; // Number of data points to show at once
+        let maxVisiblePoints = 50;
+        let panningSensitivity = 1.0; // Number of data points to show at once
         
         // Cluster colors - vibrant and distinct
         const clusterColors = {
@@ -1255,6 +1269,7 @@
             updateMinimizeButtons();
             updatePanelVisibility();
             updateMaxVisiblePoints();
+            updatePanningSensitivity();
         }
 
         function showStatus(message, type = 'info') {
@@ -1337,6 +1352,10 @@
                 updateFeatureSelectors(headers);
                 
                 filteredData = [...stockData];
+                
+                // Reinitialize visible range for new data
+                initializeVisibleRange();
+                
                 updateChart();
                 updateStats();
                 updateLegend();
@@ -1419,12 +1438,18 @@
             showStatus('🗑️ Data cleared', 'success');
         }
         
+        function handleNumRowsChange() {
+            // Regenerate sample data with new number of rows
+            generateSampleData();
+        }
+        
         function generateSampleData() {
+            const numRows = parseInt(document.getElementById('numRows').value);
             stockData = [];
             const startDate = new Date('2024-09-06');
             let lastPrice = 520;
             
-            for (let i = 0; i < 200; i++) {
+            for (let i = 0; i < numRows; i++) {
                 const date = new Date(startDate.getTime() + i * 3600000); // Add hours
                 
                 // Create more realistic price movement
@@ -1457,6 +1482,10 @@
             updateFeatureSelectors(sampleHeaders);
             
             filteredData = [...stockData];
+            
+            // Reinitialize visible range for new data
+            initializeVisibleRange();
+            
             updateChart();
             updateStats();
             updateLegend();
@@ -2966,8 +2995,11 @@
                 const deltaX = mouseX - lastMouseX;
                 const deltaY = mouseY - lastMouseY;
                 
+                
                 // Use horizontal movement to pan through data range
-                panVisibleRange(deltaX);
+                if (Math.abs(deltaX) >= 1) { // Only pan if there's actual movement
+                    panVisibleRange(deltaX * panningSensitivity);
+                }
                 
                 // Use vertical movement for price panning (optional)
                 panOffsetY += deltaY;
@@ -3228,7 +3260,16 @@
             visibleEndIndex = visibleData.length - 1;
             visibleStartIndex = Math.max(0, visibleEndIndex - maxVisiblePoints + 1);
             
-            console.log('Reset visible range to latest data:', visibleStartIndex, 'to', visibleEndIndex);
+            updateChart();
+        }
+        
+        function panToMiddle() {
+            const visibleData = filteredData.filter(d => d.visible);
+            if (visibleData.length === 0) return;
+            
+            // Pan to the middle of the dataset
+            const middleIndex = Math.floor(visibleData.length / 2);
+            panToPosition(middleIndex);
             updateChart();
         }
         
@@ -3246,7 +3287,13 @@
                 visibleStartIndex = Math.max(0, visibleEndIndex - maxVisiblePoints + 1);
             }
             
-            console.log('Initialized visible range:', visibleStartIndex, 'to', visibleEndIndex, 'out of', visibleData.length, 'total data points');
+            // If we have more data than maxVisiblePoints, ensure we can pan through all of it
+            if (visibleData.length > maxVisiblePoints) {
+                // Start from the most recent data but allow panning through all
+                visibleEndIndex = visibleData.length - 1;
+                visibleStartIndex = Math.max(0, visibleEndIndex - maxVisiblePoints + 1);
+            }
+            
         }
         
         function updateVisibleRange() {
@@ -3280,26 +3327,43 @@
             const dataWidth = chartArea.width / (visibleEndIndex - visibleStartIndex + 1);
             const pointsToMove = Math.round(deltaX / dataWidth);
             
-            // Make panning more sensitive for better user experience
-            const sensitivity = Math.max(1, Math.abs(pointsToMove));
-            const actualMove = pointsToMove > 0 ? sensitivity : -sensitivity;
+            // Reduce sensitivity - only move if there's significant drag
+            if (Math.abs(pointsToMove) < 0.5) return; // Ignore tiny movements
             
-            // Update visible range
-            const newStartIndex = Math.max(0, visibleStartIndex - actualMove);
-            const newEndIndex = Math.min(visibleData.length - 1, newStartIndex + (visibleEndIndex - visibleStartIndex));
+            // Calculate the range size
+            const rangeSize = visibleEndIndex - visibleStartIndex + 1;
+            
+            // Update visible range - drag right moves to more recent data (higher indices)
+            const newStartIndex = Math.max(0, visibleStartIndex + pointsToMove);
+            const newEndIndex = Math.min(visibleData.length - 1, newStartIndex + rangeSize - 1);
             
             // Ensure we don't go beyond available data
             if (newEndIndex >= visibleData.length) {
                 const adjustedEndIndex = visibleData.length - 1;
-                const adjustedStartIndex = Math.max(0, adjustedEndIndex - (visibleEndIndex - visibleStartIndex));
+                const adjustedStartIndex = Math.max(0, adjustedEndIndex - rangeSize + 1);
                 visibleStartIndex = adjustedStartIndex;
                 visibleEndIndex = adjustedEndIndex;
+            } else if (newStartIndex < 0) {
+                visibleStartIndex = 0;
+                visibleEndIndex = Math.min(visibleData.length - 1, rangeSize - 1);
             } else {
                 visibleStartIndex = newStartIndex;
                 visibleEndIndex = newEndIndex;
             }
             
-            console.log('Panned visible range to:', visibleStartIndex, 'to', visibleEndIndex);
+        }
+        
+        function panToPosition(startIndex) {
+            const visibleData = filteredData.filter(d => d.visible);
+            if (visibleData.length === 0) return;
+            
+            const rangeSize = visibleEndIndex - visibleStartIndex + 1;
+            const newStartIndex = Math.max(0, Math.min(startIndex, visibleData.length - rangeSize));
+            const newEndIndex = Math.min(visibleData.length - 1, newStartIndex + rangeSize - 1);
+            
+            visibleStartIndex = newStartIndex;
+            visibleEndIndex = newEndIndex;
+            
         }
         
         function updateMaxVisiblePoints() {
@@ -3334,23 +3398,36 @@
                 visibleStartIndex = Math.max(0, visibleEndIndex - newRangeSize + 1);
             }
             
-            console.log('Updated max visible points to:', maxVisiblePoints, 'adjusted to:', adjustedMaxPoints);
-            console.log('New visible range:', visibleStartIndex, 'to', visibleEndIndex);
             
             updateChart();
         }
         
+        function updatePanningSensitivity() {
+            const slider = document.getElementById('panningSensitivity');
+            const valueDisplay = document.getElementById('panningSensitivityValue');
+            
+            if (slider && valueDisplay) {
+                panningSensitivity = parseFloat(slider.value);
+                valueDisplay.textContent = panningSensitivity.toFixed(1);
+                
+            }
+        }
+        
+        function adjustPanningSensitivity(delta) {
+            const slider = document.getElementById('panningSensitivity');
+            const valueDisplay = document.getElementById('panningSensitivityValue');
+            
+            if (slider && valueDisplay) {
+                const newValue = Math.max(0.1, Math.min(5.0, panningSensitivity + delta));
+                slider.value = newValue;
+                panningSensitivity = newValue;
+                valueDisplay.textContent = panningSensitivity.toFixed(1);
+                
+            }
+        }
+        
         function debugChart() {
-            console.log('Chart Debug Info:');
-            console.log('Total data:', stockData.length);
-            console.log('Filtered data:', filteredData.length);
-            console.log('Visible data:', filteredData.filter(d => d.visible).length);
-            console.log('Visible range:', visibleStartIndex, 'to', visibleEndIndex);
-            console.log('Max visible points:', maxVisiblePoints);
-            console.log('Zoom level:', zoomLevel);
-            console.log('Pan offset:', panOffsetX, panOffsetY);
-            console.log('Chart area:', chartArea);
-            console.log('Canvas size:', canvas.width, canvas.height);
+            // Debug chart function - can be used for debugging if needed
         }
         
         // Initialize when page loads
@@ -3382,12 +3459,12 @@
                     break;
                 case 'ArrowLeft':
                     e.preventDefault();
-                    panVisibleRange(-10); // Pan left
+                    panVisibleRange(-10); // Pan left (to older data)
                     updateChart();
                     break;
                 case 'ArrowRight':
                     e.preventDefault();
-                    panVisibleRange(10); // Pan right
+                    panVisibleRange(10); // Pan right (to newer data)
                     updateChart();
                     break;
                 case 'Home':
@@ -3403,6 +3480,15 @@
                         visibleEndIndex = Math.min(maxVisiblePoints - 1, visibleData.length - 1);
                         updateChart();
                     }
+                    break;
+                case '+':
+                case '=':
+                    e.preventDefault();
+                    adjustPanningSensitivity(0.1);
+                    break;
+                case '-':
+                    e.preventDefault();
+                    adjustPanningSensitivity(-0.1);
                     break;
             }
         });
@@ -3440,8 +3526,6 @@
                 visibleStartIndex = Math.max(0, visibleEndIndex - newRangeSize + 1);
             }
             
-            console.log('Set max visible points to:', maxVisiblePoints, 'adjusted to:', adjustedMaxPoints);
-            console.log('New visible range:', visibleStartIndex, 'to', visibleEndIndex);
             
             updateChart();
         }
