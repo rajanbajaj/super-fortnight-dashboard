@@ -28,22 +28,44 @@
                 padding: 15px;
             }
             
-            .controls {
-                grid-template-columns: 1fr;
-                gap: 20px;
+            .overlay-left {
+                top: 60px;
+                bottom: 20px;
+                right: 20px;
+                left: 20px;
+                max-width: none;
+                flex-direction: column;
+                gap: 10px;
             }
             
-            .control-section {
-                padding: 15px;
+            .overlay-panel {
+                min-width: 150px;
+                max-width: none;
+                padding: 10px 12px;
             }
             
-            .legend-content {
-                gap: 15px;
+            .overlay-stats {
+                grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+                gap: 6px;
             }
             
-            .stats-content {
-                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-                gap: 12px;
+            .overlay-legend {
+                max-height: 150px;
+            }
+            
+            .overlay-settings-panel {
+                left: 10px;
+                right: 10px;
+                min-width: auto;
+            }
+            
+            .overlay-panel-header {
+                padding: 4px 0;
+            }
+            
+            .overlay-panel-btn {
+                padding: 2px 4px;
+                font-size: 8px;
             }
         }
         
@@ -136,10 +158,7 @@
         }
         
         .controls {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 25px;
-            margin-bottom: 30px;
+            display: none; /* Hidden - using overlay controls instead */
         }
         
         .control-section {
@@ -222,11 +241,7 @@
         }
         
         .legend {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 20px;
-            border-radius: 12px;
-            margin: 20px 0;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: none; /* Hidden - using overlay legend instead */
         }
         
         .legend h3 {
@@ -281,6 +296,342 @@
             overflow: hidden;
         }
         
+        .chart-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .chart-overlay > * {
+            pointer-events: auto;
+        }
+        
+        .overlay-top {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+        }
+        
+        .overlay-bottom {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 20px;
+        }
+        
+        .overlay-left {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 320px;
+        }
+        
+        .overlay-right {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .overlay-panel {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 12px 16px;
+            min-width: 200px;
+            max-width: 300px;
+            transition: all 0.3s ease;
+        }
+        
+        .overlay-panel.minimized {
+            padding: 8px 12px;
+            min-width: 120px;
+            max-width: 150px;
+        }
+        
+        .overlay-panel.minimized .overlay-controls,
+        .overlay-panel.minimized .overlay-stats,
+        .overlay-panel.minimized .overlay-legend {
+            display: none;
+        }
+        
+        .overlay-panel.minimized h4 {
+            margin-bottom: 0;
+            font-size: 12px;
+        }
+        
+        .overlay-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        
+        .overlay-panel-header h4 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .overlay-panel-controls {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .overlay-panel-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            padding: 4px 6px;
+            color: white;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .overlay-panel-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #00ff88;
+        }
+        
+        .overlay-settings {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+            z-index: 20;
+        }
+        
+        .overlay-settings:hover {
+            background: rgba(0, 0, 0, 0.9);
+            border-color: #00ff88;
+        }
+        
+        .overlay-settings-panel {
+            position: absolute;
+            top: 40px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            z-index: 25;
+            min-width: 200px;
+        }
+        
+        .overlay-settings-panel.hidden {
+            display: none;
+        }
+        
+        .overlay-settings-group {
+            margin-bottom: 12px;
+        }
+        
+        .overlay-settings-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        .overlay-settings-group label {
+            display: block;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .overlay-settings-group input[type="range"] {
+            width: 100%;
+            margin-bottom: 4px;
+        }
+        
+        .overlay-settings-group input[type="checkbox"] {
+            margin-right: 6px;
+            accent-color: #00ff88;
+        }
+        
+        .overlay-settings-group .panel-visibility-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        
+        .overlay-settings-group .panel-checkbox {
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            padding: 2px 0;
+        }
+        
+        .overlay-settings-group .panel-checkbox input[type="checkbox"] {
+            margin-right: 4px;
+            width: 12px;
+            height: 12px;
+        }
+        
+        .overlay-settings-value {
+            font-size: 10px;
+            color: #00ff88;
+            text-align: center;
+        }
+        
+        .overlay-panel h4 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 6px;
+        }
+        
+        .overlay-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .overlay-control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .overlay-control-group label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+        }
+        
+        .overlay-control-group select,
+        .overlay-control-group input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            padding: 6px 8px;
+            color: white;
+            font-size: 12px;
+        }
+        
+        .overlay-control-group select:focus,
+        .overlay-control-group input:focus {
+            outline: none;
+            border-color: #00ff88;
+            box-shadow: 0 0 0 1px rgba(0, 255, 136, 0.3);
+        }
+        
+        .overlay-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 8px;
+        }
+        
+        .overlay-stat-item {
+            text-align: center;
+            padding: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .overlay-stat-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #00ff88;
+            margin-bottom: 2px;
+        }
+        
+        .overlay-stat-label {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .overlay-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .overlay-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            font-size: 11px;
+        }
+        
+        .overlay-legend-color {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .overlay-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+        }
+        
+        .overlay-toggle:hover {
+            background: rgba(0, 0, 0, 0.9);
+            border-color: #00ff88;
+        }
+        
+        .overlay-hidden {
+            display: none;
+        }
+        
         #candlestickChart {
             width: 100%;
             height: 100%;
@@ -288,11 +639,7 @@
         }
         
         .stats {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 20px;
-            border-radius: 12px;
-            margin: 20px 0;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: none; /* Hidden - using overlay stats instead */
         }
         
         .stats h3 {
@@ -382,26 +729,26 @@
             <!-- Chart Configuration Section -->
             <div class="control-section">
                 <h3>📊 Chart Configuration</h3>
-                <div class="control-group">
-                    <label for="chartType">Chart Type:</label>
-                    <select id="chartType" onchange="updateChart()">
-                        <option value="candlestick">Standard Candlestick</option>
-                        <option value="scatter">Scatter Plot</option>
-                        <option value="line">Line Chart</option>
-                        <option value="histogram">Histogram</option>
-                    </select>
-                </div>
-                
-                <div class="control-group">
-                    <label for="numRows">Number of Rows:</label>
-                    <input type="number" id="numRows" min="10" max="1000" value="200" onchange="updateChart()">
-                </div>
-                
-                <div class="control-group" id="candleWidthGroup">
-                    <label for="candleWidth">Candle Width:</label>
-                    <input type="range" id="candleWidth" min="2" max="20" value="8" onchange="updateChart()">
-                </div>
-                
+            <div class="control-group">
+                <label for="chartType">Chart Type:</label>
+                <select id="chartType" onchange="updateChart()">
+                    <option value="candlestick">Standard Candlestick</option>
+                    <option value="scatter">Scatter Plot</option>
+                    <option value="line">Line Chart</option>
+                    <option value="histogram">Histogram</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="numRows">Number of Rows:</label>
+                <input type="number" id="numRows" min="10" max="1000" value="200" onchange="updateChart()">
+            </div>
+            
+            <div class="control-group" id="candleWidthGroup">
+                <label for="candleWidth">Candle Width:</label>
+                <input type="range" id="candleWidth" min="2" max="20" value="8" onchange="updateChart()">
+            </div>
+            
                 <div class="control-group">
                     <label for="showVolume">Show Volume:</label>
                     <select id="showVolume" onchange="updateChart()">
@@ -414,54 +761,54 @@
             <!-- Axis Configuration Section -->
             <div class="control-section">
                 <h3>📈 Axis Configuration</h3>
-                <div class="control-group" id="xAxisGroup" style="display: none;">
-                    <label for="xAxis">X-Axis Feature:</label>
-                    <select id="xAxis" onchange="updateChart()">
-                        <option value="timestamp">Timestamp</option>
-                        <option value="open">Open Price</option>
-                        <option value="high">High Price</option>
-                        <option value="low">Low Price</option>
-                        <option value="close">Close Price</option>
-                        <option value="volume">Volume</option>
-                    </select>
-                </div>
-                
-                <div class="control-group" id="yAxisGroup" style="display: none;">
-                    <label for="yAxis">Y-Axis Feature:</label>
-                    <select id="yAxis" onchange="updateChart()">
-                        <option value="close">Close Price</option>
-                        <option value="open">Open Price</option>
-                        <option value="high">High Price</option>
-                        <option value="low">Low Price</option>
-                        <option value="volume">Volume</option>
-                    </select>
-                </div>
-                
-                <div class="control-group" id="histogramGroup" style="display: none;">
-                    <label for="histogramFeature">Histogram Feature:</label>
-                    <select id="histogramFeature" onchange="updateChart()">
-                        <option value="close">Close Price</option>
-                        <option value="open">Open Price</option>
-                        <option value="high">High Price</option>
-                        <option value="low">Low Price</option>
-                        <option value="volume">Volume</option>
-                    </select>
-                </div>
+            <div class="control-group" id="xAxisGroup" style="display: none;">
+                <label for="xAxis">X-Axis Feature:</label>
+                <select id="xAxis" onchange="updateChart()">
+                    <option value="timestamp">Timestamp</option>
+                    <option value="open">Open Price</option>
+                    <option value="high">High Price</option>
+                    <option value="low">Low Price</option>
+                    <option value="close">Close Price</option>
+                    <option value="volume">Volume</option>
+                </select>
+            </div>
+            
+            <div class="control-group" id="yAxisGroup" style="display: none;">
+                <label for="yAxis">Y-Axis Feature:</label>
+                <select id="yAxis" onchange="updateChart()">
+                    <option value="close">Close Price</option>
+                    <option value="open">Open Price</option>
+                    <option value="high">High Price</option>
+                    <option value="low">Low Price</option>
+                    <option value="volume">Volume</option>
+                </select>
+            </div>
+            
+            <div class="control-group" id="histogramGroup" style="display: none;">
+                <label for="histogramFeature">Histogram Feature:</label>
+                <select id="histogramFeature" onchange="updateChart()">
+                    <option value="close">Close Price</option>
+                    <option value="open">Open Price</option>
+                    <option value="high">High Price</option>
+                    <option value="low">Low Price</option>
+                    <option value="volume">Volume</option>
+                </select>
+            </div>
             </div>
             
             <!-- Filtering Section -->
             <div class="control-section">
                 <h3>🔍 Data Filtering</h3>
-                <div class="control-group">
-                    <label for="clusterFilter">Filter by Cluster:</label>
-                    <select id="clusterFilter" onchange="updateChart()">
-                        <option value="all">All Clusters</option>
-                        <option value="0">Cluster 0</option>
-                        <option value="1">Cluster 1</option>
-                        <option value="2">Cluster 2</option>
-                        <option value="3">Cluster 3</option>
-                    </select>
-                </div>
+            <div class="control-group">
+                <label for="clusterFilter">Filter by Cluster:</label>
+                <select id="clusterFilter" onchange="updateChart()">
+                    <option value="all">All Clusters</option>
+                    <option value="0">Cluster 0</option>
+                    <option value="1">Cluster 1</option>
+                    <option value="2">Cluster 2</option>
+                    <option value="3">Cluster 3</option>
+                </select>
+            </div>
                 
                 <div class="control-group">
                     <label for="candleTypeFilter">Filter by Candle Type:</label>
@@ -470,8 +817,8 @@
                         <option value="bullish">Bullish (Green)</option>
                         <option value="bearish">Bearish (Red)</option>
                     </select>
-                </div>
-                
+        </div>
+        
                 <div class="control-group">
                     <label for="candlePatternFilter">Filter by Candle Pattern:</label>
                     <select id="candlePatternFilter" onchange="updateChart()">
@@ -519,6 +866,195 @@
         
         <div class="chart-container">
             <canvas id="candlestickChart"></canvas>
+            
+            <!-- Chart Overlay -->
+            <div class="chart-overlay">
+                <!-- Settings Button (Top Right) -->
+                <div class="overlay-settings" onclick="toggleSettings()">⚙️ Settings</div>
+                
+                <!-- Settings Panel (Top Right) -->
+                <div class="overlay-settings-panel hidden" id="overlaySettingsPanel">
+                    <div class="overlay-settings-group">
+                        <label>Panel Opacity</label>
+                        <input type="range" id="panelOpacity" min="0.3" max="1" step="0.1" value="0.8" onchange="updatePanelOpacity()">
+                        <div class="overlay-settings-value" id="opacityValue">80%</div>
+                    </div>
+                    
+                    <div class="overlay-settings-group">
+                        <label style="font-weight: 600; color: #00ff88; margin-bottom: 8px;">Panel Visibility</label>
+                        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                            <button class="overlay-panel-btn" onclick="selectAllPanels()" style="font-size: 9px; padding: 2px 6px;">All</button>
+                            <button class="overlay-panel-btn" onclick="deselectAllPanels()" style="font-size: 9px; padding: 2px 6px;">None</button>
+                        </div>
+                        <div class="panel-visibility-grid">
+                            <label class="panel-checkbox">
+                                <input type="checkbox" id="showChartPanel" checked onchange="updatePanelVisibility()">
+                                📊 Chart
+                            </label>
+                            <label class="panel-checkbox">
+                                <input type="checkbox" id="showFiltersPanel" checked onchange="updatePanelVisibility()">
+                                🔍 Filters
+                            </label>
+                            <label class="panel-checkbox">
+                                <input type="checkbox" id="showColorsPanel" checked onchange="updatePanelVisibility()">
+                                🎨 Colors
+                            </label>
+                            <label class="panel-checkbox">
+                                <input type="checkbox" id="showStatsPanel" checked onchange="updatePanelVisibility()">
+                                📈 Stats
+                            </label>
+                            <label class="panel-checkbox">
+                                <input type="checkbox" id="showLegendPanel" checked onchange="updatePanelVisibility()">
+                                📊 Legend
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="overlay-settings-group">
+                        <label>
+                            <input type="checkbox" id="autoMinimize" onchange="updateAutoMinimize()">
+                            Auto Minimize Panels
+                        </label>
+                    </div>
+                    <div class="overlay-settings-group">
+                        <label>
+                            <input type="checkbox" id="showMinimizeButtons" checked onchange="updateMinimizeButtons()">
+                            Show Minimize Buttons
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Toggle Button -->
+                <button class="overlay-toggle" onclick="toggleOverlay()">⚙️ Controls</button>
+                
+                <!-- All Panels on Left Side -->
+                <div class="overlay-left" id="overlayLeft">
+                    <!-- Chart Configuration Panel -->
+                    <div class="overlay-panel" id="chartPanel">
+                        <div class="overlay-panel-header" onclick="togglePanel('chartPanel')">
+                            <h4>📊 Chart</h4>
+                            <div class="overlay-panel-controls">
+                                <button class="overlay-panel-btn minimize-btn" onclick="event.stopPropagation(); togglePanel('chartPanel')">−</button>
+                            </div>
+                        </div>
+                        <div class="overlay-controls">
+                            <div class="overlay-control-group">
+                                <label>Type</label>
+                                <select id="overlayChartType" onchange="updateChart()">
+                                    <option value="candlestick">Candlestick</option>
+                                    <option value="scatter">Scatter</option>
+                                    <option value="line">Line</option>
+                                    <option value="histogram">Histogram</option>
+                                </select>
+                            </div>
+                            <div class="overlay-control-group">
+                                <label>Rows</label>
+                                <input type="number" id="overlayNumRows" min="10" max="1000" value="200" onchange="updateChart()">
+                            </div>
+                            <div class="overlay-control-group" id="overlayCandleWidthGroup">
+                                <label>Width</label>
+                                <input type="range" id="overlayCandleWidth" min="2" max="20" value="8" onchange="updateChart()">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Filters Panel -->
+                    <div class="overlay-panel" id="filtersPanel">
+                        <div class="overlay-panel-header" onclick="togglePanel('filtersPanel')">
+                            <h4>🔍 Filters</h4>
+                            <div class="overlay-panel-controls">
+                                <button class="overlay-panel-btn minimize-btn" onclick="event.stopPropagation(); togglePanel('filtersPanel')">−</button>
+                            </div>
+                        </div>
+                        <div class="overlay-controls">
+                            <div class="overlay-control-group">
+                                <label>Cluster</label>
+                                <select id="overlayClusterFilter" onchange="updateChart()">
+                                    <option value="all">All</option>
+                                    <option value="0">Cluster 0</option>
+                                    <option value="1">Cluster 1</option>
+                                    <option value="2">Cluster 2</option>
+                                    <option value="3">Cluster 3</option>
+                                </select>
+                            </div>
+                            <div class="overlay-control-group">
+                                <label>Candle Type</label>
+                                <select id="overlayCandleTypeFilter" onchange="updateChart()">
+                                    <option value="all">All</option>
+                                    <option value="bullish">Bullish</option>
+                                    <option value="bearish">Bearish</option>
+                                </select>
+                            </div>
+                            <div class="overlay-control-group">
+                                <label>Pattern</label>
+                                <select id="overlayCandlePatternFilter" onchange="updateChart()">
+                                    <option value="all">All</option>
+                                    <option value="doji">Doji</option>
+                                    <option value="marubozu">Marubozu</option>
+                                    <option value="hammer">Hammer</option>
+                                    <option value="hanging_man">Hanging Man</option>
+                                    <option value="shooting_star">Shooting Star</option>
+                                    <option value="inverted_hammer">Inverted Hammer</option>
+                                    <option value="spinning_top">Spinning Top</option>
+                                    <option value="long_legged_doji">Long Legged Doji</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Colors Panel -->
+                    <div class="overlay-panel" id="colorsPanel">
+                        <div class="overlay-panel-header" onclick="togglePanel('colorsPanel')">
+                            <h4>🎨 Colors</h4>
+                            <div class="overlay-panel-controls">
+                                <button class="overlay-panel-btn minimize-btn" onclick="event.stopPropagation(); togglePanel('colorsPanel')">−</button>
+                            </div>
+                        </div>
+                        <div class="overlay-controls">
+                            <div class="overlay-control-group">
+                                <label>
+                                    <input type="checkbox" id="overlayShowClusterColors" checked onchange="updateChart()" style="margin-right: 6px;">
+                                    Cluster Colors
+                                </label>
+                            </div>
+                            <div class="overlay-control-group">
+                                <label>Pattern Mode</label>
+                                <select id="overlayPatternColorMode" onchange="updateChart()">
+                                    <option value="bullish_bearish">Bullish/Bearish</option>
+                                    <option value="pattern_specific">Pattern Specific</option>
+                                    <option value="no_colors">No Colors</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Statistics Panel -->
+                    <div class="overlay-panel" id="statsPanel">
+                        <div class="overlay-panel-header" onclick="togglePanel('statsPanel')">
+                            <h4>📈 Stats</h4>
+                            <div class="overlay-panel-controls">
+                                <button class="overlay-panel-btn minimize-btn" onclick="event.stopPropagation(); togglePanel('statsPanel')">−</button>
+                            </div>
+                        </div>
+                        <div class="overlay-stats" id="overlayStats">
+                            <!-- Stats will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- Legend Panel -->
+                    <div class="overlay-panel" id="legendPanel">
+                        <div class="overlay-panel-header" onclick="togglePanel('legendPanel')">
+                            <h4>📊 Legend</h4>
+                            <div class="overlay-panel-controls">
+                                <button class="overlay-panel-btn minimize-btn" onclick="event.stopPropagation(); togglePanel('legendPanel')">−</button>
+                            </div>
+                        </div>
+                        <div class="overlay-legend" id="overlayLegend">
+                            <!-- Legend will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -651,10 +1187,16 @@
         function init() {
             setupCanvas();
             generateSampleData(); // Start with sample data
+            syncOverlayControls(); // Sync overlay controls with main controls
             updateControlVisibility();
             updateStats();
             updateLegend();
             updateChart();
+            
+            // Initialize settings
+            updatePanelOpacity();
+            updateMinimizeButtons();
+            updatePanelVisibility();
         }
 
         function showStatus(message, type = 'info') {
@@ -883,10 +1425,16 @@
         }
         
         function updateChart() {
+            // Sync controls between main and overlay
+            syncMainControls();
+            syncOverlayControls();
+            
             filterData();
             updateControlVisibility();
             drawChart();
             updateStats();
+            updateOverlayStats();
+            updateOverlayLegend();
         }
         
         function updateControlVisibility() {
@@ -931,10 +1479,10 @@
             // Add visibility flags instead of removing data
             filtered = filtered.map(d => {
                 let visible = true;
-                
-                // Filter by cluster
-                if (clusterFilter !== 'all') {
-                    const cluster = parseInt(clusterFilter);
+            
+            // Filter by cluster
+            if (clusterFilter !== 'all') {
+                const cluster = parseInt(clusterFilter);
                     visible = visible && d.predicted_cluster === cluster;
                 }
                 
@@ -1026,30 +1574,30 @@
                 
                 // Only draw if visible
                 if (data.visible) {
-                    drawCandlestick(
-                        x, 
-                        data.open, 
-                        data.high, 
-                        data.low, 
-                        data.close,
-                        minPrice - padding,
-                        maxPrice + padding,
-                        chartHeight,
+                drawCandlestick(
+                    x, 
+                    data.open, 
+                    data.high, 
+                    data.low, 
+                    data.close,
+                    minPrice - padding,
+                    maxPrice + padding,
+                    chartHeight,
+                    candleWidth,
+                    color
+                );
+                
+                // Draw volume bar if enabled
+                if (showVolume) {
+                    drawVolumeBar(
+                        x,
+                        data.volume,
+                        maxVolume,
+                        chartArea.y + chartHeight + 40,
+                        volumeHeight,
                         candleWidth,
                         color
                     );
-                    
-                    // Draw volume bar if enabled
-                    if (showVolume) {
-                        drawVolumeBar(
-                            x,
-                            data.volume,
-                            maxVolume,
-                            chartArea.y + chartHeight + 40,
-                            volumeHeight,
-                            candleWidth,
-                            color
-                        );
                     }
                 }
             });
@@ -1129,20 +1677,20 @@
                     
                     const x = chartArea.x + ((xValue - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
                     const y = chartArea.y + chartArea.height - ((yValue - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
-                    
-                    // Draw point
-                    ctx.fillStyle = color.main;
-                    ctx.beginPath();
-                    ctx.arc(x, y, 8, 0, 2 * Math.PI);
-                    ctx.fill();
-                    
-                    // Add glow effect
-                    ctx.shadowColor = color.shadow;
-                    ctx.shadowBlur = 15;
-                    ctx.beginPath();
-                    ctx.arc(x, y, 8, 0, 2 * Math.PI);
-                    ctx.fill();
-                    ctx.shadowBlur = 0;
+                
+                // Draw point
+                ctx.fillStyle = color.main;
+                ctx.beginPath();
+                ctx.arc(x, y, 8, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Add glow effect
+                ctx.shadowColor = color.shadow;
+                ctx.shadowBlur = 15;
+                ctx.beginPath();
+                ctx.arc(x, y, 8, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.shadowBlur = 0;
                 }
             });
             
@@ -1200,15 +1748,15 @@
             drawCustomGrid(minX - xPadding, maxX + xPadding, minY - yPadding, maxY + yPadding);
             
             if (showClusterColors) {
-                // Group data by cluster for different colored lines
-                const clusterGroups = {};
-                filteredData.forEach((data, i) => {
+            // Group data by cluster for different colored lines
+            const clusterGroups = {};
+            filteredData.forEach((data, i) => {
                     // Only include visible points
                     if (data.visible) {
-                        const cluster = data.predicted_cluster || 0;
-                        if (!clusterGroups[cluster]) {
-                            clusterGroups[cluster] = [];
-                        }
+                const cluster = data.predicted_cluster || 0;
+                if (!clusterGroups[cluster]) {
+                    clusterGroups[cluster] = [];
+                }
                         // Get x and y values, handling timestamps
                         let xValue, yValue;
                         
@@ -1224,49 +1772,49 @@
                             yValue = data[yAxis];
                         }
                         
-                        clusterGroups[cluster].push({
+                clusterGroups[cluster].push({
                             x: xValue,
                             y: yValue,
-                            index: i
-                        });
+                    index: i
+                });
+                    }
+            });
+            
+            // Draw lines for each cluster
+            Object.keys(clusterGroups).forEach(cluster => {
+                const group = clusterGroups[cluster];
+                const color = clusterColors[cluster] || clusterColors[0];
+                
+                ctx.strokeStyle = color.main;
+                ctx.lineWidth = 4;
+                ctx.shadowColor = color.shadow;
+                ctx.shadowBlur = 10;
+                
+                ctx.beginPath();
+                group.forEach((point, i) => {
+                    const x = chartArea.x + ((point.x - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
+                    const y = chartArea.y + chartArea.height - ((point.y - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
+                    
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
                     }
                 });
+                ctx.stroke();
+                ctx.shadowBlur = 0;
                 
-                // Draw lines for each cluster
-                Object.keys(clusterGroups).forEach(cluster => {
-                    const group = clusterGroups[cluster];
-                    const color = clusterColors[cluster] || clusterColors[0];
+                // Draw points
+                group.forEach(point => {
+                    const x = chartArea.x + ((point.x - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
+                    const y = chartArea.y + chartArea.height - ((point.y - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
                     
-                    ctx.strokeStyle = color.main;
-                    ctx.lineWidth = 4;
-                    ctx.shadowColor = color.shadow;
-                    ctx.shadowBlur = 10;
-                    
+                    ctx.fillStyle = color.main;
                     ctx.beginPath();
-                    group.forEach((point, i) => {
-                        const x = chartArea.x + ((point.x - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
-                        const y = chartArea.y + chartArea.height - ((point.y - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
-                        
-                        if (i === 0) {
-                            ctx.moveTo(x, y);
-                        } else {
-                            ctx.lineTo(x, y);
-                        }
-                    });
-                    ctx.stroke();
-                    ctx.shadowBlur = 0;
-                    
-                    // Draw points
-                    group.forEach(point => {
-                        const x = chartArea.x + ((point.x - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
-                        const y = chartArea.y + chartArea.height - ((point.y - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
-                        
-                        ctx.fillStyle = color.main;
-                        ctx.beginPath();
-                        ctx.arc(x, y, 6, 0, 2 * Math.PI);
-                        ctx.fill();
-                    });
+                    ctx.arc(x, y, 6, 0, 2 * Math.PI);
+                    ctx.fill();
                 });
+            });
             } else {
                 // Draw single line with price-based coloring
                 ctx.strokeStyle = '#4ecdc4';
@@ -1361,16 +1909,16 @@
             data.forEach((value, i) => {
                 // Only include visible data points
                 if (filteredData[i].visible) {
-                    const binIndex = Math.min(Math.floor((value - minValue) / binWidth), numBins - 1);
-                    bins[binIndex]++;
-                    
-                    if (!binData[binIndex]) {
-                        binData[binIndex] = [];
-                    }
-                    binData[binIndex].push({
-                        value: value,
+                const binIndex = Math.min(Math.floor((value - minValue) / binWidth), numBins - 1);
+                bins[binIndex]++;
+                
+                if (!binData[binIndex]) {
+                    binData[binIndex] = [];
+                }
+                binData[binIndex].push({
+                    value: value,
                         data: filteredData[i]
-                    });
+                });
                 }
             });
             
@@ -1386,30 +1934,30 @@
                 const y = chartArea.y + chartArea.height - height;
                 
                 if (showClusterColors) {
-                    // Calculate cluster distribution for this bin
-                    const clusterCounts = {};
-                    binData[binIndex].forEach(item => {
+                // Calculate cluster distribution for this bin
+                const clusterCounts = {};
+                binData[binIndex].forEach(item => {
                         const cluster = item.data.predicted_cluster || 0;
                         clusterCounts[cluster] = (clusterCounts[cluster] || 0) + 1;
-                    });
+                });
+                
+                // Draw stacked bars for each cluster
+                let currentY = y;
+                Object.keys(clusterCounts).forEach(cluster => {
+                    const clusterCount = clusterCounts[cluster];
+                    const clusterHeight = (clusterCount / count) * height;
+                    const color = clusterColors[cluster] || clusterColors[0];
                     
-                    // Draw stacked bars for each cluster
-                    let currentY = y;
-                    Object.keys(clusterCounts).forEach(cluster => {
-                        const clusterCount = clusterCounts[cluster];
-                        const clusterHeight = (clusterCount / count) * height;
-                        const color = clusterColors[cluster] || clusterColors[0];
-                        
-                        ctx.fillStyle = color.main;
-                        ctx.fillRect(x, currentY, barWidth * 0.8, clusterHeight);
-                        
-                        // Add border
-                        ctx.strokeStyle = color.main;
-                        ctx.lineWidth = 2;
-                        ctx.strokeRect(x, currentY, barWidth * 0.8, clusterHeight);
-                        
-                        currentY += clusterHeight;
-                    });
+                    ctx.fillStyle = color.main;
+                    ctx.fillRect(x, currentY, barWidth * 0.8, clusterHeight);
+                    
+                    // Add border
+                    ctx.strokeStyle = color.main;
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x, currentY, barWidth * 0.8, clusterHeight);
+                    
+                    currentY += clusterHeight;
+                });
                 } else {
                     // Draw single color bars based on price movement
                     const bullishCount = binData[binIndex].filter(item => item.data.close > item.data.open).length;
@@ -1609,7 +2157,7 @@
                         minute: '2-digit'
                     }), chartArea.x - 20, y + 15);
                 } else {
-                    ctx.fillText(value.toFixed(2), chartArea.x - 20, y + 15);
+                ctx.fillText(value.toFixed(2), chartArea.x - 20, y + 15);
                 }
             }
             
@@ -1629,7 +2177,7 @@
                         minute: '2-digit'
                     }), x, chartArea.y + chartArea.height + 50);
                 } else {
-                    ctx.fillText(value.toFixed(2), x, chartArea.y + chartArea.height + 50);
+                ctx.fillText(value.toFixed(2), x, chartArea.y + chartArea.height + 50);
                 }
             }
             
@@ -1678,19 +2226,19 @@
             if (showClusterColors) {
                 // Show cluster information
                 const uniqueClusters = [...new Set(filteredData.filter(d => d.visible).map(d => d.predicted_cluster || 0))].sort();
-                
-                uniqueClusters.forEach(cluster => {
-                    const color = clusterColors[cluster] || clusterColors[0];
+            
+            uniqueClusters.forEach(cluster => {
+                const color = clusterColors[cluster] || clusterColors[0];
                     const count = filteredData.filter(d => d.visible && (d.predicted_cluster || 0) === cluster).length;
-                    
-                    const item = document.createElement('div');
-                    item.className = 'legend-item';
-                    item.innerHTML = `
-                        <div class="legend-color" style="background-color: ${color.main}"></div>
-                        <span>Cluster ${cluster} (${count} points)</span>
-                    `;
-                    legend.appendChild(item);
-                });
+                
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                item.innerHTML = `
+                    <div class="legend-color" style="background-color: ${color.main}"></div>
+                    <span>Cluster ${cluster} (${count} points)</span>
+                `;
+                legend.appendChild(item);
+            });
             } else {
                 // Show candle pattern information based on color mode
                 const visibleData = filteredData.filter(d => d.visible);
@@ -1891,6 +2439,400 @@
             
             statsContainer.innerHTML = statsHtml;
         }
+        
+        // Overlay toggle functionality
+        function toggleOverlay() {
+            const leftPanel = document.getElementById('overlayLeft');
+            const toggle = document.querySelector('.overlay-toggle');
+            
+            if (leftPanel.classList.contains('overlay-hidden')) {
+                leftPanel.classList.remove('overlay-hidden');
+                toggle.textContent = '⚙️ Controls';
+            } else {
+                leftPanel.classList.add('overlay-hidden');
+                toggle.textContent = '⚙️ Show';
+            }
+        }
+        
+        // Settings panel toggle
+        function toggleSettings() {
+            const settingsPanel = document.getElementById('overlaySettingsPanel');
+            settingsPanel.classList.toggle('hidden');
+        }
+        
+        // Panel minimize/maximize functionality
+        function togglePanel(panelId) {
+            const panel = document.getElementById(panelId);
+            const minimizeBtn = panel.querySelector('.minimize-btn');
+            
+            if (panel.classList.contains('minimized')) {
+                panel.classList.remove('minimized');
+                minimizeBtn.textContent = '−';
+            } else {
+                panel.classList.add('minimized');
+                minimizeBtn.textContent = '+';
+            }
+        }
+        
+        // Update panel opacity
+        function updatePanelOpacity() {
+            const opacity = document.getElementById('panelOpacity').value;
+            const opacityValue = document.getElementById('opacityValue');
+            const panels = document.querySelectorAll('.overlay-panel');
+            
+            opacityValue.textContent = Math.round(opacity * 100) + '%';
+            
+            panels.forEach(panel => {
+                panel.style.background = `rgba(0, 0, 0, ${opacity})`;
+            });
+        }
+        
+        // Update auto minimize setting
+        function updateAutoMinimize() {
+            const autoMinimize = document.getElementById('autoMinimize').checked;
+            const panels = document.querySelectorAll('.overlay-panel');
+            
+            if (autoMinimize) {
+                // Auto minimize all panels after 5 seconds of inactivity
+                let timeoutId;
+                const resetTimeout = () => {
+                    clearTimeout(timeoutId);
+                    timeoutId = setTimeout(() => {
+                        panels.forEach(panel => {
+                            if (!panel.classList.contains('minimized')) {
+                                panel.classList.add('minimized');
+                                const minimizeBtn = panel.querySelector('.minimize-btn');
+                                if (minimizeBtn) minimizeBtn.textContent = '+';
+                            }
+                        });
+                    }, 5000);
+                };
+                
+                // Reset timeout on any interaction
+                panels.forEach(panel => {
+                    panel.addEventListener('mouseenter', resetTimeout);
+                    panel.addEventListener('click', resetTimeout);
+                });
+                
+                resetTimeout();
+            }
+        }
+        
+        // Update minimize buttons visibility
+        function updateMinimizeButtons() {
+            const showButtons = document.getElementById('showMinimizeButtons').checked;
+            const minimizeButtons = document.querySelectorAll('.minimize-btn');
+            
+            minimizeButtons.forEach(btn => {
+                btn.style.display = showButtons ? 'block' : 'none';
+            });
+        }
+        
+        // Update panel visibility based on checkboxes
+        function updatePanelVisibility() {
+            const panels = {
+                'chartPanel': document.getElementById('showChartPanel').checked,
+                'filtersPanel': document.getElementById('showFiltersPanel').checked,
+                'colorsPanel': document.getElementById('showColorsPanel').checked,
+                'statsPanel': document.getElementById('showStatsPanel').checked,
+                'legendPanel': document.getElementById('showLegendPanel').checked
+            };
+            
+            // Show/hide individual panels
+            Object.keys(panels).forEach(panelId => {
+                const panel = document.getElementById(panelId);
+                if (panel) {
+                    panel.style.display = panels[panelId] ? 'block' : 'none';
+                }
+            });
+            
+            // Update left panel section visibility
+            const leftPanel = document.getElementById('overlayLeft');
+            const anyPanelVisible = Object.values(panels).some(visible => visible);
+            leftPanel.style.display = anyPanelVisible ? 'flex' : 'none';
+        }
+        
+        // Select all panels
+        function selectAllPanels() {
+            const checkboxes = [
+                'showChartPanel',
+                'showFiltersPanel', 
+                'showColorsPanel',
+                'showStatsPanel',
+                'showLegendPanel'
+            ];
+            
+            checkboxes.forEach(id => {
+                const checkbox = document.getElementById(id);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
+            
+            updatePanelVisibility();
+        }
+        
+        // Deselect all panels
+        function deselectAllPanels() {
+            const checkboxes = [
+                'showChartPanel',
+                'showFiltersPanel', 
+                'showColorsPanel',
+                'showStatsPanel',
+                'showLegendPanel'
+            ];
+            
+            checkboxes.forEach(id => {
+                const checkbox = document.getElementById(id);
+                if (checkbox) {
+                    checkbox.checked = false;
+                }
+            });
+            
+            updatePanelVisibility();
+        }
+        
+        // Sync overlay controls with main controls
+        function syncOverlayControls() {
+            // Chart type
+            const mainChartType = document.getElementById('chartType');
+            const overlayChartType = document.getElementById('overlayChartType');
+            if (mainChartType && overlayChartType) {
+                overlayChartType.value = mainChartType.value;
+            }
+            
+            // Number of rows
+            const mainNumRows = document.getElementById('numRows');
+            const overlayNumRows = document.getElementById('overlayNumRows');
+            if (mainNumRows && overlayNumRows) {
+                overlayNumRows.value = mainNumRows.value;
+            }
+            
+            // Candle width
+            const mainCandleWidth = document.getElementById('candleWidth');
+            const overlayCandleWidth = document.getElementById('overlayCandleWidth');
+            if (mainCandleWidth && overlayCandleWidth) {
+                overlayCandleWidth.value = mainCandleWidth.value;
+            }
+            
+            // Cluster filter
+            const mainClusterFilter = document.getElementById('clusterFilter');
+            const overlayClusterFilter = document.getElementById('overlayClusterFilter');
+            if (mainClusterFilter && overlayClusterFilter) {
+                overlayClusterFilter.value = mainClusterFilter.value;
+            }
+            
+            // Candle type filter
+            const mainCandleTypeFilter = document.getElementById('candleTypeFilter');
+            const overlayCandleTypeFilter = document.getElementById('overlayCandleTypeFilter');
+            if (mainCandleTypeFilter && overlayCandleTypeFilter) {
+                overlayCandleTypeFilter.value = mainCandleTypeFilter.value;
+            }
+            
+            // Candle pattern filter
+            const mainCandlePatternFilter = document.getElementById('candlePatternFilter');
+            const overlayCandlePatternFilter = document.getElementById('overlayCandlePatternFilter');
+            if (mainCandlePatternFilter && overlayCandlePatternFilter) {
+                overlayCandlePatternFilter.value = mainCandlePatternFilter.value;
+            }
+            
+            // Show cluster colors
+            const mainShowClusterColors = document.getElementById('showClusterColors');
+            const overlayShowClusterColors = document.getElementById('overlayShowClusterColors');
+            if (mainShowClusterColors && overlayShowClusterColors) {
+                overlayShowClusterColors.checked = mainShowClusterColors.checked;
+            }
+            
+            // Pattern color mode
+            const mainPatternColorMode = document.getElementById('patternColorMode');
+            const overlayPatternColorMode = document.getElementById('overlayPatternColorMode');
+            if (mainPatternColorMode && overlayPatternColorMode) {
+                overlayPatternColorMode.value = mainPatternColorMode.value;
+            }
+        }
+        
+        // Sync main controls with overlay controls
+        function syncMainControls() {
+            // Chart type
+            const mainChartType = document.getElementById('chartType');
+            const overlayChartType = document.getElementById('overlayChartType');
+            if (mainChartType && overlayChartType) {
+                mainChartType.value = overlayChartType.value;
+            }
+            
+            // Number of rows
+            const mainNumRows = document.getElementById('numRows');
+            const overlayNumRows = document.getElementById('overlayNumRows');
+            if (mainNumRows && overlayNumRows) {
+                mainNumRows.value = overlayNumRows.value;
+            }
+            
+            // Candle width
+            const mainCandleWidth = document.getElementById('candleWidth');
+            const overlayCandleWidth = document.getElementById('overlayCandleWidth');
+            if (mainCandleWidth && overlayCandleWidth) {
+                mainCandleWidth.value = overlayCandleWidth.value;
+            }
+            
+            // Cluster filter
+            const mainClusterFilter = document.getElementById('clusterFilter');
+            const overlayClusterFilter = document.getElementById('overlayClusterFilter');
+            if (mainClusterFilter && overlayClusterFilter) {
+                mainClusterFilter.value = overlayClusterFilter.value;
+            }
+            
+            // Candle type filter
+            const mainCandleTypeFilter = document.getElementById('candleTypeFilter');
+            const overlayCandleTypeFilter = document.getElementById('overlayCandleTypeFilter');
+            if (mainCandleTypeFilter && overlayCandleTypeFilter) {
+                mainCandleTypeFilter.value = overlayCandleTypeFilter.value;
+            }
+            
+            // Candle pattern filter
+            const mainCandlePatternFilter = document.getElementById('candlePatternFilter');
+            const overlayCandlePatternFilter = document.getElementById('overlayCandlePatternFilter');
+            if (mainCandlePatternFilter && overlayCandlePatternFilter) {
+                mainCandlePatternFilter.value = overlayCandlePatternFilter.value;
+            }
+            
+            // Show cluster colors
+            const mainShowClusterColors = document.getElementById('showClusterColors');
+            const overlayShowClusterColors = document.getElementById('overlayShowClusterColors');
+            if (mainShowClusterColors && overlayShowClusterColors) {
+                mainShowClusterColors.checked = overlayShowClusterColors.checked;
+            }
+            
+            // Pattern color mode
+            const mainPatternColorMode = document.getElementById('patternColorMode');
+            const overlayPatternColorMode = document.getElementById('overlayPatternColorMode');
+            if (mainPatternColorMode && overlayPatternColorMode) {
+                mainPatternColorMode.value = overlayPatternColorMode.value;
+            }
+        }
+        
+        // Update overlay stats
+        function updateOverlayStats() {
+            const overlayStats = document.getElementById('overlayStats');
+            if (!overlayStats) return;
+            
+            if (filteredData.length === 0) {
+                overlayStats.innerHTML = '<div class="overlay-stat-item"><div class="overlay-stat-value">-</div><div class="overlay-stat-label">No Data</div></div>';
+                return;
+            }
+            
+            const visibleData = filteredData.filter(d => d.visible);
+            const prices = visibleData.map(d => d.close);
+            const volumes = visibleData.map(d => d.volume);
+            
+            const statsHtml = `
+                <div class="overlay-stat-item">
+                    <div class="overlay-stat-value">${visibleData.length}</div>
+                    <div class="overlay-stat-label">Visible</div>
+                </div>
+                <div class="overlay-stat-item">
+                    <div class="overlay-stat-value">${prices.length > 0 ? prices[0].toFixed(2) : '-'}</div>
+                    <div class="overlay-stat-label">Current</div>
+                </div>
+                <div class="overlay-stat-item">
+                    <div class="overlay-stat-value">${prices.length > 0 ? Math.max(...prices).toFixed(2) : '-'}</div>
+                    <div class="overlay-stat-label">High</div>
+                </div>
+                <div class="overlay-stat-item">
+                    <div class="overlay-stat-value">${prices.length > 0 ? Math.min(...prices).toFixed(2) : '-'}</div>
+                    <div class="overlay-stat-label">Low</div>
+                </div>
+                <div class="overlay-stat-item">
+                    <div class="overlay-stat-value">${volumes.length > 0 ? (volumes.reduce((a, b) => a + b, 0) / volumes.length / 1000).toFixed(0) + 'K' : '-'}</div>
+                    <div class="overlay-stat-label">Avg Vol</div>
+                </div>
+            `;
+            
+            overlayStats.innerHTML = statsHtml;
+        }
+        
+        // Update overlay legend
+        function updateOverlayLegend() {
+            const overlayLegend = document.getElementById('overlayLegend');
+            if (!overlayLegend) return;
+            
+            overlayLegend.innerHTML = '';
+            
+            const showClusterColors = document.getElementById('showClusterColors').checked;
+            
+            if (showClusterColors) {
+                // Show cluster information
+                const visibleData = filteredData.filter(d => d.visible);
+                const clusterCounts = {};
+                
+                visibleData.forEach(d => {
+                    const cluster = d.predicted_cluster || 0;
+                    clusterCounts[cluster] = (clusterCounts[cluster] || 0) + 1;
+                });
+                
+                Object.keys(clusterCounts).forEach(cluster => {
+                    const count = clusterCounts[cluster];
+                    const color = clusterColors[cluster] || clusterColors[0];
+                    
+                    const item = document.createElement('div');
+                    item.className = 'overlay-legend-item';
+                    item.innerHTML = `
+                        <div class="overlay-legend-color" style="background-color: ${color.main}"></div>
+                        <span>Cluster ${cluster} (${count})</span>
+                    `;
+                    overlayLegend.appendChild(item);
+                });
+            } else {
+                // Show pattern information
+                const visibleData = filteredData.filter(d => d.visible);
+                const patternCounts = {};
+                const patternColorMode = document.getElementById('patternColorMode').value;
+                
+                visibleData.forEach(d => {
+                    const pattern = detectCandlePattern(d);
+                    patternCounts[pattern] = (patternCounts[pattern] || 0) + 1;
+                });
+                
+                const sortedPatterns = Object.keys(patternCounts).sort((a, b) => patternCounts[b] - patternCounts[a]);
+                
+                sortedPatterns.slice(0, 5).forEach(pattern => {
+                    const count = patternCounts[pattern];
+                    const displayName = pattern.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    
+                    let color;
+                    if (patternColorMode === 'pattern_specific') {
+                        color = getCandlePatternColor(pattern).main;
+                    } else if (patternColorMode === 'no_colors') {
+                        color = defaultColors.neutral.main;
+                    } else {
+                        if (pattern.includes('bullish') || pattern === 'hammer' || pattern === 'inverted_hammer') {
+                            color = defaultColors.bullish.main;
+                        } else if (pattern.includes('bearish') || pattern === 'hanging_man' || pattern === 'shooting_star' || pattern === 'marubozu') {
+                            color = defaultColors.bearish.main;
+                        } else {
+                            color = defaultColors.neutral.main;
+                        }
+                    }
+                    
+                    const item = document.createElement('div');
+                    item.className = 'overlay-legend-item';
+                    item.innerHTML = `
+                        <div class="overlay-legend-color" style="background-color: ${color}"></div>
+                        <span>${displayName} (${count})</span>
+                    `;
+                    overlayLegend.appendChild(item);
+                });
+            }
+        }
+        
+        // Click outside to close settings
+        document.addEventListener('click', (e) => {
+            const settingsPanel = document.getElementById('overlaySettingsPanel');
+            const settingsButton = document.querySelector('.overlay-settings');
+            
+            if (!settingsPanel.contains(e.target) && !settingsButton.contains(e.target)) {
+                settingsPanel.classList.add('hidden');
+            }
+        });
         
         // Initialize when page loads
         window.addEventListener('load', init);
