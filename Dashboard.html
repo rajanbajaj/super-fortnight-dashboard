@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>8K Stock Market Candlestick Chart with Cluster Analysis</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0c0c0c, #1a1a2e, #16213e);
+            color: white;
+            overflow-x: auto;
+        }
+        
+        .container {
+            width: 100%;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            font-size: 3rem;
+            margin: 0;
+            background: linear-gradient(45deg, #00ff88, #00d4ff, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+
+        .data-input {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .data-input textarea {
+            width: 100%;
+            height: 150px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            color: white;
+            font-family: monospace;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        .data-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #00ff88, #00d4ff);
+            color: #000;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-width: 150px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        select, input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: white;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        select option {
+            background: #1a1a2e;
+            color: white;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 8px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .chart-container {
+            width: 100%;
+            height: 80vh;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            box-sizing: border-box;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #candlestickChart {
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #00ff88;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .error {
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid rgba(255, 107, 107, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .success {
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid rgba(0, 255, 136, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📈 8K Stock Market Candlestick Analysis</h1>
+            <div class="subtitle">Interactive Hourly Data with ML Cluster Classification</div>
+        </div>
+
+        <div class="data-input">
+            <h3>📊 Data Input</h3>
+            <p>Paste your CSV data below (with headers: timestamp,open,high,low,close,volume,predicted_cluster) or use sample data:</p>
+            <textarea id="csvInput" placeholder="timestamp,open,high,low,close,volume,predicted_cluster
+2024-09-06T09:00:00Z,520.50,525.00,519.00,523.75,1250000,0
+2024-09-06T10:00:00Z,523.75,526.50,521.00,524.25,980000,1
+..."></textarea>
+            <div class="data-buttons">
+                <button class="btn btn-primary" onclick="loadCSVData()">📈 Load CSV Data</button>
+                <button class="btn btn-secondary" onclick="generateSampleData()">🎲 Generate Sample Data</button>
+                <button class="btn btn-secondary" onclick="clearData()">🗑️ Clear</button>
+            </div>
+            <div id="dataStatus"></div>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="chartType">Chart Type:</label>
+                <select id="chartType" onchange="updateChart()">
+                    <option value="candlestick">Standard Candlestick</option>
+                    <option value="scatter">Scatter Plot</option>
+                    <option value="line">Line Chart</option>
+                    <option value="histogram">Histogram</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="numRows">Number of Rows:</label>
+                <input type="number" id="numRows" min="10" max="1000" value="200" onchange="updateChart()">
+            </div>
+            
+            <div class="control-group" id="candleWidthGroup">
+                <label for="candleWidth">Candle Width:</label>
+                <input type="range" id="candleWidth" min="2" max="20" value="8" onchange="updateChart()">
+            </div>
+            
+            <div class="control-group" id="xAxisGroup" style="display: none;">
+                <label for="xAxis">X-Axis Feature:</label>
+                <select id="xAxis" onchange="updateChart()">
+                    <option value="timestamp">Timestamp</option>
+                    <option value="open">Open Price</option>
+                    <option value="high">High Price</option>
+                    <option value="low">Low Price</option>
+                    <option value="close">Close Price</option>
+                    <option value="volume">Volume</option>
+                </select>
+            </div>
+            
+            <div class="control-group" id="yAxisGroup" style="display: none;">
+                <label for="yAxis">Y-Axis Feature:</label>
+                <select id="yAxis" onchange="updateChart()">
+                    <option value="close">Close Price</option>
+                    <option value="open">Open Price</option>
+                    <option value="high">High Price</option>
+                    <option value="low">Low Price</option>
+                    <option value="volume">Volume</option>
+                </select>
+            </div>
+            
+            <div class="control-group" id="histogramGroup" style="display: none;">
+                <label for="histogramFeature">Histogram Feature:</label>
+                <select id="histogramFeature" onchange="updateChart()">
+                    <option value="close">Close Price</option>
+                    <option value="open">Open Price</option>
+                    <option value="high">High Price</option>
+                    <option value="low">Low Price</option>
+                    <option value="volume">Volume</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="showVolume">Show Volume:</label>
+                <select id="showVolume" onchange="updateChart()">
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="clusterFilter">Filter by Cluster:</label>
+                <select id="clusterFilter" onchange="updateChart()">
+                    <option value="all">All Clusters</option>
+                    <option value="0">Cluster 0</option>
+                    <option value="1">Cluster 1</option>
+                    <option value="2">Cluster 2</option>
+                    <option value="3">Cluster 3</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="legend" id="legend"></div>
+        
+        <div class="stats" id="stats"></div>
+        
+        <div class="chart-container">
+            <canvas id="candlestickChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // CSV data will be loaded and processed
+        let stockData = [];
+        let filteredData = [];
+        let canvas, ctx;
+        let chartArea = { x: 80, y: 60, width: 0, height: 0 };
+        
+        // Cluster colors - vibrant and distinct
+        const clusterColors = {
+            0: { main: '#00ff88', shadow: 'rgba(0, 255, 136, 0.3)' },
+            1: { main: '#ff6b6b', shadow: 'rgba(255, 107, 107, 0.3)' },
+            2: { main: '#4ecdc4', shadow: 'rgba(78, 205, 196, 0.3)' },
+            3: { main: '#ffe66d', shadow: 'rgba(255, 230, 109, 0.3)' }
+        };
+        
+        // Initialize the application
+        function init() {
+            setupCanvas();
+            generateSampleData(); // Start with sample data
+            updateControlVisibility();
+            updateStats();
+            updateLegend();
+            updateChart();
+        }
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('dataStatus');
+            statusDiv.className = type;
+            statusDiv.innerHTML = message;
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+                statusDiv.className = '';
+            }, 5000);
+        }
+
+        function loadCSVData() {
+            const csvContent = document.getElementById('csvInput').value.trim();
+            if (!csvContent) {
+                showStatus('⚠️ Please paste CSV data first', 'error');
+                return;
+            }
+
+            try {
+                stockData = [];
+                const lines = csvContent.split('\n');
+                if (lines.length < 2) {
+                    throw new Error('CSV must have at least a header and one data row');
+                }
+
+                const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+                
+                // Validate required headers
+                const requiredHeaders = ['timestamp', 'open', 'high', 'low', 'close', 'volume'];
+                const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+                if (missingHeaders.length > 0) {
+                    throw new Error(`Missing required headers: ${missingHeaders.join(', ')}`);
+                }
+
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+
+                    const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+                    if (values.length !== headers.length) {
+                        console.warn(`Row ${i + 1} has ${values.length} values but expected ${headers.length}`);
+                        continue;
+                    }
+
+                    const row = {};
+                    headers.forEach((header, index) => {
+                        let value = values[index];
+                        
+                        // Parse numeric values
+                        if (['open', 'high', 'low', 'close', 'volume', 'predicted_cluster'].includes(header)) {
+                            value = parseFloat(value) || 0;
+                        }
+                        
+                        row[header] = value;
+                    });
+                    
+                    // Convert timestamp to Date object
+                    if (row.timestamp) {
+                        row.date = new Date(row.timestamp);
+                        if (isNaN(row.date.getTime())) {
+                            console.warn(`Invalid date in row ${i + 1}: ${row.timestamp}`);
+                            continue;
+                        }
+                    }
+                    
+                    // Set default cluster if not provided
+                    if (row.predicted_cluster === undefined) {
+                        row.predicted_cluster = 0;
+                    }
+                    
+                    stockData.push(row);
+                }
+                
+                if (stockData.length === 0) {
+                    throw new Error('No valid data rows found');
+                }
+
+                // Update feature selectors based on CSV headers
+                updateFeatureSelectors(headers);
+                
+                filteredData = [...stockData];
+                updateChart();
+                updateStats();
+                updateLegend();
+                showStatus(`✅ Successfully loaded ${stockData.length} data points`, 'success');
+                
+            } catch (error) {
+                console.error('Error parsing CSV:', error);
+                showStatus(`❌ Error parsing CSV: ${error.message}`, 'error');
+            }
+        }
+        
+        function updateFeatureSelectors(headers) {
+            // Get all numeric features from the data
+            const numericFeatures = [];
+            const excludeHeaders = ['timestamp', 'predicted_cluster', 'date'];
+            
+            // Check which headers contain numeric data by sampling the first few rows
+            if (stockData.length > 0) {
+                headers.forEach(header => {
+                    if (!excludeHeaders.includes(header.toLowerCase())) {
+                        // Check if the first few values are numeric
+                        const sampleValues = stockData.slice(0, Math.min(5, stockData.length))
+                            .map(row => row[header]);
+                        const isNumeric = sampleValues.every(val => 
+                            val !== null && val !== undefined && !isNaN(parseFloat(val))
+                        );
+                        if (isNumeric) {
+                            numericFeatures.push(header);
+                        }
+                    }
+                });
+            } else {
+                // Fallback to standard features if no data
+                numericFeatures.push('open', 'high', 'low', 'close', 'volume');
+            }
+            
+            // Add timestamp as an option for X-axis
+            const xAxisOptions = ['timestamp', ...numericFeatures];
+            const yAxisOptions = [...numericFeatures];
+            const histogramOptions = [...numericFeatures];
+            
+            // Update X-axis selector
+            const xAxisSelect = document.getElementById('xAxis');
+            xAxisSelect.innerHTML = '';
+            xAxisOptions.forEach(feature => {
+                const option = document.createElement('option');
+                option.value = feature;
+                option.textContent = feature.charAt(0).toUpperCase() + feature.slice(1);
+                xAxisSelect.appendChild(option);
+            });
+            
+            // Update Y-axis selector
+            const yAxisSelect = document.getElementById('yAxis');
+            yAxisSelect.innerHTML = '';
+            yAxisOptions.forEach(feature => {
+                const option = document.createElement('option');
+                option.value = feature;
+                option.textContent = feature.charAt(0).toUpperCase() + feature.slice(1);
+                yAxisSelect.appendChild(option);
+            });
+            
+            // Update histogram selector
+            const histogramSelect = document.getElementById('histogramFeature');
+            histogramSelect.innerHTML = '';
+            histogramOptions.forEach(feature => {
+                const option = document.createElement('option');
+                option.value = feature;
+                option.textContent = feature.charAt(0).toUpperCase() + feature.slice(1);
+                histogramSelect.appendChild(option);
+            });
+        }
+
+        function clearData() {
+            document.getElementById('csvInput').value = '';
+            stockData = [];
+            filteredData = [];
+            updateChart();
+            updateStats();
+            updateLegend();
+            showStatus('🗑️ Data cleared', 'success');
+        }
+        
+        function generateSampleData() {
+            stockData = [];
+            const startDate = new Date('2024-09-06');
+            let lastPrice = 520;
+            
+            for (let i = 0; i < 200; i++) {
+                const date = new Date(startDate.getTime() + i * 3600000); // Add hours
+                
+                // Create more realistic price movement
+                const volatility = 0.02;
+                const trend = Math.sin(i / 50) * 0.001;
+                const randomChange = (Math.random() - 0.5) * volatility;
+                const priceChange = (trend + randomChange) * lastPrice;
+                
+                const open = lastPrice;
+                const close = open + priceChange;
+                const high = Math.max(open, close) * (1 + Math.random() * 0.01);
+                const low = Math.min(open, close) * (1 - Math.random() * 0.01);
+                
+                lastPrice = close;
+                
+                stockData.push({
+                    date: date,
+                    timestamp: date.toISOString(),
+                    open: Math.round(open * 100) / 100,
+                    high: Math.round(high * 100) / 100,
+                    low: Math.round(low * 100) / 100,
+                    close: Math.round(close * 100) / 100,
+                    volume: Math.floor(Math.random() * 2000000) + 500000,
+                    predicted_cluster: Math.floor(Math.random() * 4)
+                });
+            }
+            
+            // Update feature selectors for sample data
+            const sampleHeaders = ['timestamp', 'open', 'high', 'low', 'close', 'volume', 'predicted_cluster'];
+            updateFeatureSelectors(sampleHeaders);
+            
+            filteredData = [...stockData];
+            updateChart();
+            updateStats();
+            updateLegend();
+            showStatus(`🎲 Generated ${stockData.length} sample data points`, 'success');
+        }
+        
+        function setupCanvas() {
+            canvas = document.getElementById('candlestickChart');
+            ctx = canvas.getContext('2d');
+            
+            // Set 8K resolution
+            canvas.width = 7680;  // 8K width
+            canvas.height = 4320; // 8K height
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            
+            // Calculate chart area
+            chartArea.width = canvas.width - 160;
+            chartArea.height = canvas.height - 120;
+            
+            // Set up high-DPI rendering
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+        }
+        
+        function updateChart() {
+            filterData();
+            updateControlVisibility();
+            drawChart();
+            updateStats();
+        }
+        
+        function updateControlVisibility() {
+            const chartType = document.getElementById('chartType').value;
+            const candleWidthGroup = document.getElementById('candleWidthGroup');
+            const xAxisGroup = document.getElementById('xAxisGroup');
+            const yAxisGroup = document.getElementById('yAxisGroup');
+            const histogramGroup = document.getElementById('histogramGroup');
+            
+            // Show/hide controls based on chart type
+            if (chartType === 'candlestick') {
+                candleWidthGroup.style.display = 'block';
+                xAxisGroup.style.display = 'none';
+                yAxisGroup.style.display = 'none';
+                histogramGroup.style.display = 'none';
+            } else if (chartType === 'histogram') {
+                candleWidthGroup.style.display = 'none';
+                xAxisGroup.style.display = 'none';
+                yAxisGroup.style.display = 'none';
+                histogramGroup.style.display = 'block';
+            } else { // scatter or line
+                candleWidthGroup.style.display = 'none';
+                xAxisGroup.style.display = 'block';
+                yAxisGroup.style.display = 'block';
+                histogramGroup.style.display = 'none';
+            }
+        }
+        
+        function filterData() {
+            const numRows = parseInt(document.getElementById('numRows').value);
+            const clusterFilter = document.getElementById('clusterFilter').value;
+            
+            let filtered = [...stockData];
+            
+            // Filter by number of rows (take the last N rows)
+            if (numRows && numRows < filtered.length) {
+                filtered = filtered.slice(-numRows);
+            }
+            
+            // Filter by cluster
+            if (clusterFilter !== 'all') {
+                const cluster = parseInt(clusterFilter);
+                filtered = filtered.filter(d => d.predicted_cluster === cluster);
+            }
+            
+            filteredData = filtered;
+        }
+        
+        function drawChart() {
+            if (!ctx || filteredData.length === 0) {
+                // Clear canvas and show message
+                if (ctx) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.font = '120px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('No data to display', canvas.width / 2, canvas.height / 2);
+                    ctx.font = '80px Arial';
+                    ctx.fillText('Load CSV data or generate sample data', canvas.width / 2, canvas.height / 2 + 150);
+                }
+                return;
+            }
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw background gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, 'rgba(0, 20, 40, 0.8)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0.9)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const chartType = document.getElementById('chartType').value;
+            
+            if (chartType === 'candlestick') {
+                drawCandlestickChart();
+            } else if (chartType === 'scatter') {
+                drawScatterChart();
+            } else if (chartType === 'line') {
+                drawLineChart();
+            } else if (chartType === 'histogram') {
+                drawHistogramChart();
+            }
+        }
+        
+        function drawCandlestickChart() {
+            const candleWidth = parseInt(document.getElementById('candleWidth').value);
+            const showVolume = document.getElementById('showVolume').value === 'true';
+            
+            // Calculate scales
+            const priceData = filteredData.map(d => [d.high, d.low]).flat();
+            const maxPrice = Math.max(...priceData);
+            const minPrice = Math.min(...priceData);
+            const priceRange = maxPrice - minPrice;
+            const padding = priceRange * 0.1;
+            
+            const volumeData = filteredData.map(d => d.volume);
+            const maxVolume = Math.max(...volumeData);
+            
+            const chartHeight = showVolume ? chartArea.height * 0.7 : chartArea.height;
+            const volumeHeight = showVolume ? chartArea.height * 0.25 : 0;
+            
+            const xStep = chartArea.width / filteredData.length;
+            
+            // Draw grid
+            drawGrid(minPrice - padding, maxPrice + padding, chartHeight);
+            
+            // Draw candlesticks
+            filteredData.forEach((data, i) => {
+                const x = chartArea.x + i * xStep + xStep / 2;
+                const cluster = data.predicted_cluster || 0;
+                const color = clusterColors[cluster] || clusterColors[0];
+                
+                drawCandlestick(
+                    x, 
+                    data.open, 
+                    data.high, 
+                    data.low, 
+                    data.close,
+                    minPrice - padding,
+                    maxPrice + padding,
+                    chartHeight,
+                    candleWidth,
+                    color
+                );
+                
+                // Draw volume bar if enabled
+                if (showVolume) {
+                    drawVolumeBar(
+                        x,
+                        data.volume,
+                        maxVolume,
+                        chartArea.y + chartHeight + 40,
+                        volumeHeight,
+                        candleWidth,
+                        color
+                    );
+                }
+            });
+            
+            // Draw axes labels
+            drawAxes(minPrice - padding, maxPrice + padding);
+        }
+        
+        function drawScatterChart() {
+            const xAxis = document.getElementById('xAxis').value;
+            const yAxis = document.getElementById('yAxis').value;
+            
+            // Get data for x and y axes
+            const xData = filteredData.map(d => d[xAxis]);
+            const yData = filteredData.map(d => d[yAxis]);
+            
+            const minX = Math.min(...xData);
+            const maxX = Math.max(...xData);
+            const minY = Math.min(...yData);
+            const maxY = Math.max(...yData);
+            
+            const xRange = maxX - minX;
+            const yRange = maxY - minY;
+            const xPadding = xRange * 0.05;
+            const yPadding = yRange * 0.05;
+            
+            // Draw grid
+            drawCustomGrid(minX - xPadding, maxX + xPadding, minY - yPadding, maxY + yPadding);
+            
+            // Draw scatter points
+            filteredData.forEach((data, i) => {
+                const cluster = data.predicted_cluster || 0;
+                const color = clusterColors[cluster] || clusterColors[0];
+                
+                const x = chartArea.x + ((data[xAxis] - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
+                const y = chartArea.y + chartArea.height - ((data[yAxis] - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
+                
+                // Draw point
+                ctx.fillStyle = color.main;
+                ctx.beginPath();
+                ctx.arc(x, y, 8, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Add glow effect
+                ctx.shadowColor = color.shadow;
+                ctx.shadowBlur = 15;
+                ctx.beginPath();
+                ctx.arc(x, y, 8, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+            
+            // Draw axes labels
+            drawCustomAxes(minX - xPadding, maxX + xPadding, minY - yPadding, maxY + yPadding, xAxis, yAxis);
+        }
+        
+        function drawLineChart() {
+            const xAxis = document.getElementById('xAxis').value;
+            const yAxis = document.getElementById('yAxis').value;
+            
+            // Get data for x and y axes
+            const xData = filteredData.map(d => d[xAxis]);
+            const yData = filteredData.map(d => d[yAxis]);
+            
+            const minX = Math.min(...xData);
+            const maxX = Math.max(...xData);
+            const minY = Math.min(...yData);
+            const maxY = Math.max(...yData);
+            
+            const xRange = maxX - minX;
+            const yRange = maxY - minY;
+            const xPadding = xRange * 0.05;
+            const yPadding = yRange * 0.05;
+            
+            // Draw grid
+            drawCustomGrid(minX - xPadding, maxX + xPadding, minY - yPadding, maxY + yPadding);
+            
+            // Group data by cluster for different colored lines
+            const clusterGroups = {};
+            filteredData.forEach((data, i) => {
+                const cluster = data.predicted_cluster || 0;
+                if (!clusterGroups[cluster]) {
+                    clusterGroups[cluster] = [];
+                }
+                clusterGroups[cluster].push({
+                    x: data[xAxis],
+                    y: data[yAxis],
+                    index: i
+                });
+            });
+            
+            // Draw lines for each cluster
+            Object.keys(clusterGroups).forEach(cluster => {
+                const group = clusterGroups[cluster];
+                const color = clusterColors[cluster] || clusterColors[0];
+                
+                ctx.strokeStyle = color.main;
+                ctx.lineWidth = 4;
+                ctx.shadowColor = color.shadow;
+                ctx.shadowBlur = 10;
+                
+                ctx.beginPath();
+                group.forEach((point, i) => {
+                    const x = chartArea.x + ((point.x - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
+                    const y = chartArea.y + chartArea.height - ((point.y - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
+                    
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                });
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+                
+                // Draw points
+                group.forEach(point => {
+                    const x = chartArea.x + ((point.x - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
+                    const y = chartArea.y + chartArea.height - ((point.y - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
+                    
+                    ctx.fillStyle = color.main;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 6, 0, 2 * Math.PI);
+                    ctx.fill();
+                });
+            });
+            
+            // Draw axes labels
+            drawCustomAxes(minX - xPadding, maxX + xPadding, minY - yPadding, maxY + yPadding, xAxis, yAxis);
+        }
+        
+        function drawHistogramChart() {
+            const feature = document.getElementById('histogramFeature').value;
+            const data = filteredData.map(d => d[feature]);
+            
+            const minValue = Math.min(...data);
+            const maxValue = Math.max(...data);
+            const range = maxValue - minValue;
+            const numBins = Math.min(20, Math.floor(Math.sqrt(data.length)));
+            const binWidth = range / numBins;
+            
+            // Create bins
+            const bins = Array(numBins).fill(0);
+            const binData = {};
+            
+            data.forEach((value, i) => {
+                const binIndex = Math.min(Math.floor((value - minValue) / binWidth), numBins - 1);
+                bins[binIndex]++;
+                
+                if (!binData[binIndex]) {
+                    binData[binIndex] = [];
+                }
+                binData[binIndex].push({
+                    value: value,
+                    cluster: filteredData[i].predicted_cluster || 0
+                });
+            });
+            
+            const maxCount = Math.max(...bins);
+            const barWidth = chartArea.width / numBins;
+            
+            // Draw histogram bars
+            bins.forEach((count, binIndex) => {
+                if (count === 0) return;
+                
+                const x = chartArea.x + binIndex * barWidth;
+                const height = (count / maxCount) * chartArea.height;
+                const y = chartArea.y + chartArea.height - height;
+                
+                // Calculate cluster distribution for this bin
+                const clusterCounts = {};
+                binData[binIndex].forEach(item => {
+                    clusterCounts[item.cluster] = (clusterCounts[item.cluster] || 0) + 1;
+                });
+                
+                // Draw stacked bars for each cluster
+                let currentY = y;
+                Object.keys(clusterCounts).forEach(cluster => {
+                    const clusterCount = clusterCounts[cluster];
+                    const clusterHeight = (clusterCount / count) * height;
+                    const color = clusterColors[cluster] || clusterColors[0];
+                    
+                    ctx.fillStyle = color.main;
+                    ctx.fillRect(x, currentY, barWidth * 0.8, clusterHeight);
+                    
+                    // Add border
+                    ctx.strokeStyle = color.main;
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x, currentY, barWidth * 0.8, clusterHeight);
+                    
+                    currentY += clusterHeight;
+                });
+            });
+            
+            // Draw axes labels
+            drawHistogramAxes(minValue, maxValue, maxCount, feature);
+        }
+        
+        function drawGrid(minPrice, maxPrice, chartHeight) {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 2;
+            
+            // Horizontal grid lines
+            for (let i = 0; i <= 10; i++) {
+                const y = chartArea.y + (i / 10) * chartHeight;
+                ctx.beginPath();
+                ctx.moveTo(chartArea.x, y);
+                ctx.lineTo(chartArea.x + chartArea.width, y);
+                ctx.stroke();
+            }
+            
+            // Vertical grid lines
+            const timeStep = Math.max(1, Math.floor(filteredData.length / 20));
+            for (let i = 0; i < filteredData.length; i += timeStep) {
+                const x = chartArea.x + (i / filteredData.length) * chartArea.width;
+                ctx.beginPath();
+                ctx.moveTo(x, chartArea.y);
+                ctx.lineTo(x, chartArea.y + chartHeight);
+                ctx.stroke();
+            }
+        }
+        
+        function drawCandlestick(x, open, high, low, close, minPrice, maxPrice, chartHeight, width, color) {
+            const priceRange = maxPrice - minPrice;
+            const yScale = chartHeight / priceRange;
+            
+            const openY = chartArea.y + chartHeight - (open - minPrice) * yScale;
+            const closeY = chartArea.y + chartHeight - (close - minPrice) * yScale;
+            const highY = chartArea.y + chartHeight - (high - minPrice) * yScale;
+            const lowY = chartArea.y + chartHeight - (low - minPrice) * yScale;
+            
+            const isGreen = close > open;
+            const bodyHeight = Math.abs(closeY - openY);
+            const bodyTop = Math.min(openY, closeY);
+            
+            // Draw shadow (wick)
+            ctx.strokeStyle = color.main;
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(x, highY);
+            ctx.lineTo(x, lowY);
+            ctx.stroke();
+            
+            // Draw body
+            ctx.fillStyle = isGreen ? color.main : 'rgba(255, 0, 0, 0.8)';
+            ctx.strokeStyle = color.main;
+            ctx.lineWidth = 3;
+            
+            if (bodyHeight < 6) {
+                // Draw as line for very small bodies
+                ctx.beginPath();
+                ctx.moveTo(x - width/2, openY);
+                ctx.lineTo(x + width/2, openY);
+                ctx.stroke();
+            } else {
+                // Draw rectangle body
+                ctx.fillRect(x - width/2, bodyTop, width, bodyHeight);
+                ctx.strokeRect(x - width/2, bodyTop, width, bodyHeight);
+            }
+            
+            // Add glow effect
+            ctx.shadowColor = color.shadow;
+            ctx.shadowBlur = 20;
+            ctx.strokeRect(x - width/2, bodyTop, width, bodyHeight);
+            ctx.shadowBlur = 0;
+        }
+        
+        function drawVolumeBar(x, volume, maxVolume, startY, maxHeight, width, color) {
+            const height = (volume / maxVolume) * maxHeight;
+            
+            ctx.fillStyle = color.shadow;
+            ctx.fillRect(x - width/2, startY + maxHeight - height, width, height);
+            
+            ctx.strokeStyle = color.main;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x - width/2, startY + maxHeight - height, width, height);
+        }
+        
+        function drawAxes(minPrice, maxPrice) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.font = '48px Arial';
+            ctx.textAlign = 'right';
+            
+            // Price labels
+            for (let i = 0; i <= 10; i++) {
+                const price = minPrice + (maxPrice - minPrice) * (i / 10);
+                const y = chartArea.y + chartArea.height - (i / 10) * chartArea.height;
+                ctx.fillText(price.toFixed(2), chartArea.x - 20, y + 15);
+            }
+            
+            // Time labels
+            ctx.textAlign = 'center';
+            const timeStep = Math.max(1, Math.floor(filteredData.length / 10));
+            for (let i = 0; i < filteredData.length; i += timeStep) {
+                if (filteredData[i] && filteredData[i].date) {
+                    const x = chartArea.x + (i / filteredData.length) * chartArea.width;
+                    const timeStr = filteredData[i].date.toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric' 
+                    });
+                    ctx.fillText(timeStr, x, chartArea.y + chartArea.height + 50);
+                }
+            }
+        }
+        
+        function drawCustomGrid(minX, maxX, minY, maxY) {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 2;
+            
+            // Horizontal grid lines
+            for (let i = 0; i <= 10; i++) {
+                const y = chartArea.y + (i / 10) * chartArea.height;
+                ctx.beginPath();
+                ctx.moveTo(chartArea.x, y);
+                ctx.lineTo(chartArea.x + chartArea.width, y);
+                ctx.stroke();
+            }
+            
+            // Vertical grid lines
+            for (let i = 0; i <= 10; i++) {
+                const x = chartArea.x + (i / 10) * chartArea.width;
+                ctx.beginPath();
+                ctx.moveTo(x, chartArea.y);
+                ctx.lineTo(x, chartArea.y + chartArea.height);
+                ctx.stroke();
+            }
+        }
+        
+        function drawCustomAxes(minX, maxX, minY, maxY, xLabel, yLabel) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.font = '48px Arial';
+            ctx.textAlign = 'right';
+            
+            // Y-axis labels
+            for (let i = 0; i <= 10; i++) {
+                const value = minY + (maxY - minY) * (i / 10);
+                const y = chartArea.y + chartArea.height - (i / 10) * chartArea.height;
+                ctx.fillText(value.toFixed(2), chartArea.x - 20, y + 15);
+            }
+            
+            // X-axis labels
+            ctx.textAlign = 'center';
+            for (let i = 0; i <= 10; i++) {
+                const value = minX + (maxX - minX) * (i / 10);
+                const x = chartArea.x + (i / 10) * chartArea.width;
+                ctx.fillText(value.toFixed(2), x, chartArea.y + chartArea.height + 50);
+            }
+            
+            // Axis titles
+            ctx.textAlign = 'center';
+            ctx.font = '60px Arial';
+            ctx.fillText(yLabel, 30, chartArea.y + chartArea.height / 2);
+            ctx.fillText(xLabel, chartArea.x + chartArea.width / 2, chartArea.y + chartArea.height + 100);
+        }
+        
+        function drawHistogramAxes(minValue, maxValue, maxCount, feature) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.font = '48px Arial';
+            ctx.textAlign = 'right';
+            
+            // Y-axis labels (count)
+            for (let i = 0; i <= 10; i++) {
+                const count = (maxCount * i) / 10;
+                const y = chartArea.y + chartArea.height - (i / 10) * chartArea.height;
+                ctx.fillText(Math.round(count).toString(), chartArea.x - 20, y + 15);
+            }
+            
+            // X-axis labels (value range)
+            ctx.textAlign = 'center';
+            for (let i = 0; i <= 10; i++) {
+                const value = minValue + (maxValue - minValue) * (i / 10);
+                const x = chartArea.x + (i / 10) * chartArea.width;
+                ctx.fillText(value.toFixed(2), x, chartArea.y + chartArea.height + 50);
+            }
+            
+            // Axis titles
+            ctx.textAlign = 'center';
+            ctx.font = '60px Arial';
+            ctx.fillText('Count', 30, chartArea.y + chartArea.height / 2);
+            ctx.fillText(feature, chartArea.x + chartArea.width / 2, chartArea.y + chartArea.height + 100);
+        }
+        
+        function updateLegend() {
+            const legend = document.getElementById('legend');
+            legend.innerHTML = '';
+            
+            if (filteredData.length === 0) return;
+            
+            // Get unique clusters from current data
+            const uniqueClusters = [...new Set(filteredData.map(d => d.predicted_cluster || 0))].sort();
+            
+            uniqueClusters.forEach(cluster => {
+                const color = clusterColors[cluster] || clusterColors[0];
+                const count = filteredData.filter(d => (d.predicted_cluster || 0) === cluster).length;
+                
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                item.innerHTML = `
+                    <div class="legend-color" style="background-color: ${color.main}"></div>
+                    <span>Cluster ${cluster} (${count} points)</span>
+                `;
+                legend.appendChild(item);
+            });
+        }
+        
+        function updateStats() {
+            if (filteredData.length === 0) {
+                document.getElementById('stats').innerHTML = '<div class="stat-card"><div class="stat-value">No Data</div><div class="stat-label">Load data to see stats</div></div>';
+                return;
+            }
+            
+            const prices = filteredData.map(d => d.close);
+            const volumes = filteredData.map(d => d.volume);
+            
+            const minPrice = Math.min(...prices);
+            const maxPrice = Math.max(...prices);
+            const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+            const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length;
+            
+            // Calculate cluster distribution
+            const clusterCounts = {};
+            filteredData.forEach(d => {
+                const cluster = d.predicted_cluster || 0;
+                clusterCounts[cluster] = (clusterCounts[cluster] || 0) + 1;
+            });
+            
+            const statsHtml = `
+                <div class="stat-card">
+                    <div class="stat-value">${filteredData.length}</div>
+                    <div class="stat-label">Data Points</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">₹${avgPrice.toFixed(2)}</div>
+                    <div class="stat-label">Avg Price</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">₹${minPrice.toFixed(2)}</div>
+                    <div class="stat-label">Min Price</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">₹${maxPrice.toFixed(2)}</div>
+                    <div class="stat-label">Max Price</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${(avgVolume / 1000000).toFixed(2)}M</div>
+                    <div class="stat-label">Avg Volume</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${Object.keys(clusterCounts).length}</div>
+                    <div class="stat-label">Active Clusters</div>
+                </div>
+            `;
+            
+            document.getElementById('stats').innerHTML = statsHtml;
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('load', init);
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            setupCanvas();
+            updateChart();
+        });
+    </script>
+</body>
+</html>
