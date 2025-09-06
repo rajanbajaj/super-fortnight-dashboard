@@ -966,6 +966,21 @@
                         🐛 Debug Chart
                     </button>
                 </div>
+                
+                <div class="overlay-settings-group">
+                    <label style="font-weight: 600; color: #00ff88; margin-bottom: 8px;">Settings Management</label>
+                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                        <button class="overlay-panel-btn" onclick="saveSettingsWithNotification()" style="flex: 1; padding: 6px; font-size: 11px;">
+                            💾 Save
+                        </button>
+                        <button class="overlay-panel-btn" onclick="loadSettings()" style="flex: 1; padding: 6px; font-size: 11px;">
+                            📂 Load
+                        </button>
+                        <button class="overlay-panel-btn" onclick="clearSettings()" style="flex: 1; padding: 6px; font-size: 11px;">
+                            🗑️ Clear
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -1274,6 +1289,16 @@
             updatePanelVisibility();
             updateMaxVisiblePoints();
             updatePanningSensitivity();
+            
+            // Load saved settings
+            const settingsLoaded = loadSettings();
+            if (settingsLoaded) {
+                showStatus('📂 Settings loaded from localStorage', 'success');
+                // Update chart with loaded settings
+                updateChart();
+                updateStats();
+                updateLegend();
+            }
         }
 
         function showStatus(message, type = 'info') {
@@ -1534,6 +1559,9 @@
             updateStats();
             updateOverlayStats();
             updateOverlayLegend();
+            
+            // Auto-save settings after chart updates
+            saveSettings();
         }
         
         function redrawChart() {
@@ -3340,12 +3368,161 @@
             // Reset pattern color mode to default
             document.getElementById('patternColorMode').value = 'bullish_bearish';
             
+            // Clear saved settings
+            localStorage.removeItem('chartSettings');
+            
             // Update the chart with all reset values
             updateChart();
             updateStats();
             updateLegend();
             
             showStatus('🔄 Chart reset to default settings', 'success');
+        }
+        
+        function saveSettings() {
+            const settings = {
+                // Chart display settings
+                maxVisiblePoints: parseInt(document.getElementById('maxVisiblePoints').value),
+                panningSensitivity: parseFloat(document.getElementById('panningSensitivity').value),
+                panelOpacity: parseFloat(document.getElementById('panelOpacity').value),
+                
+                // Panel visibility
+                showChartPanel: document.getElementById('showChartPanel').checked,
+                showFiltersPanel: document.getElementById('showFiltersPanel').checked,
+                showColorsPanel: document.getElementById('showColorsPanel').checked,
+                showStatsPanel: document.getElementById('showStatsPanel').checked,
+                showLegendPanel: document.getElementById('showLegendPanel').checked,
+                
+                // Chart configuration
+                chartType: document.getElementById('chartType').value,
+                numRows: parseInt(document.getElementById('numRows').value),
+                candleWidth: parseInt(document.getElementById('candleWidth').value),
+                
+                // Filters
+                clusterFilter: document.getElementById('clusterFilter').value,
+                candleTypeFilter: document.getElementById('candleTypeFilter').value,
+                candlePatternFilter: document.getElementById('candlePatternFilter').value,
+                showClusterColors: document.getElementById('showClusterColors').checked,
+                patternColorMode: document.getElementById('patternColorMode').value,
+                
+                // Chart state
+                zoomLevel: zoomLevel,
+                panOffsetX: panOffsetX,
+                panOffsetY: panOffsetY,
+                visibleStartIndex: visibleStartIndex,
+                visibleEndIndex: visibleEndIndex
+            };
+            
+            localStorage.setItem('chartSettings', JSON.stringify(settings));
+            // Save silently without notification
+        }
+        
+        function loadSettings() {
+            const savedSettings = localStorage.getItem('chartSettings');
+            if (!savedSettings) return false;
+            
+            try {
+                const settings = JSON.parse(savedSettings);
+                
+                // Load chart display settings
+                if (settings.maxVisiblePoints) {
+                    document.getElementById('maxVisiblePoints').value = settings.maxVisiblePoints;
+                    updateMaxVisiblePoints();
+                }
+                
+                if (settings.panningSensitivity) {
+                    document.getElementById('panningSensitivity').value = settings.panningSensitivity;
+                    updatePanningSensitivity();
+                }
+                
+                if (settings.panelOpacity) {
+                    document.getElementById('panelOpacity').value = settings.panelOpacity;
+                    updatePanelOpacity();
+                }
+                
+                // Load panel visibility
+                const panelCheckboxes = [
+                    'showChartPanel', 'showFiltersPanel', 'showColorsPanel', 
+                    'showStatsPanel', 'showLegendPanel'
+                ];
+                panelCheckboxes.forEach(checkboxId => {
+                    const checkbox = document.getElementById(checkboxId);
+                    if (checkbox && settings[checkboxId] !== undefined) {
+                        checkbox.checked = settings[checkboxId];
+                    }
+                });
+                updatePanelVisibility();
+                
+                // Load chart configuration
+                if (settings.chartType) {
+                    document.getElementById('chartType').value = settings.chartType;
+                }
+                
+                if (settings.numRows) {
+                    document.getElementById('numRows').value = settings.numRows;
+                }
+                
+                if (settings.candleWidth) {
+                    document.getElementById('candleWidth').value = settings.candleWidth;
+                }
+                
+                // Load filters
+                if (settings.clusterFilter) {
+                    document.getElementById('clusterFilter').value = settings.clusterFilter;
+                }
+                
+                if (settings.candleTypeFilter) {
+                    document.getElementById('candleTypeFilter').value = settings.candleTypeFilter;
+                }
+                
+                if (settings.candlePatternFilter) {
+                    document.getElementById('candlePatternFilter').value = settings.candlePatternFilter;
+                }
+                
+                if (settings.showClusterColors !== undefined) {
+                    document.getElementById('showClusterColors').checked = settings.showClusterColors;
+                }
+                
+                if (settings.patternColorMode) {
+                    document.getElementById('patternColorMode').value = settings.patternColorMode;
+                }
+                
+                // Load chart state
+                if (settings.zoomLevel) {
+                    zoomLevel = settings.zoomLevel;
+                }
+                
+                if (settings.panOffsetX !== undefined) {
+                    panOffsetX = settings.panOffsetX;
+                }
+                
+                if (settings.panOffsetY !== undefined) {
+                    panOffsetY = settings.panOffsetY;
+                }
+                
+                if (settings.visibleStartIndex !== undefined) {
+                    visibleStartIndex = settings.visibleStartIndex;
+                }
+                
+                if (settings.visibleEndIndex !== undefined) {
+                    visibleEndIndex = settings.visibleEndIndex;
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Error loading settings:', error);
+                return false;
+            }
+        }
+        
+        function clearSettings() {
+            localStorage.removeItem('chartSettings');
+            showStatus('🗑️ Settings cleared from localStorage', 'success');
+        }
+        
+        function saveSettingsWithNotification() {
+            saveSettings();
+            showStatus('💾 Settings saved to localStorage', 'success');
         }
         
         function panToMiddle() {
@@ -3485,6 +3662,9 @@
             
             
             updateChart();
+            
+            // Auto-save settings
+            saveSettings();
         }
         
         function updatePanningSensitivity() {
@@ -3495,6 +3675,8 @@
                 panningSensitivity = parseFloat(slider.value);
                 valueDisplay.textContent = panningSensitivity.toFixed(1);
                 
+                // Auto-save settings
+                saveSettings();
             }
         }
         
@@ -3508,6 +3690,8 @@
                 panningSensitivity = newValue;
                 valueDisplay.textContent = panningSensitivity.toFixed(1);
                 
+                // Auto-save settings
+                saveSettings();
             }
         }
         
@@ -3520,6 +3704,7 @@
                 const newValue = Math.max(10, Math.min(200, currentValue + delta));
                 slider.value = newValue;
                 updateMaxVisiblePoints();
+                // Auto-save is handled in updateMaxVisiblePoints
             }
         }
         
