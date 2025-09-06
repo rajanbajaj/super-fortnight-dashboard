@@ -327,6 +327,13 @@
                     <option value="bearish">Bearish (Red)</option>
                 </select>
             </div>
+            
+            <div class="control-group">
+                <label for="showClusterColors" style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="showClusterColors" checked onchange="updateChart()" style="width: auto; margin: 0;">
+                    Show Cluster Colors
+                </label>
+            </div>
         </div>
         
         <div class="legend" id="legend"></div>
@@ -352,6 +359,33 @@
             2: { main: '#4ecdc4', shadow: 'rgba(78, 205, 196, 0.3)' },
             3: { main: '#ffe66d', shadow: 'rgba(255, 230, 109, 0.3)' }
         };
+        
+        // Default colors when cluster coloring is disabled
+        const defaultColors = {
+            bullish: { main: '#00ff88', shadow: 'rgba(0, 255, 136, 0.3)' },
+            bearish: { main: '#ff6b6b', shadow: 'rgba(255, 107, 107, 0.3)' },
+            neutral: { main: '#4ecdc4', shadow: 'rgba(78, 205, 196, 0.3)' }
+        };
+        
+        // Helper function to get color based on cluster coloring setting
+        function getDataColor(data) {
+            const showClusterColors = document.getElementById('showClusterColors').checked;
+            
+            if (showClusterColors) {
+                // Use cluster-based colors
+                const cluster = data.predicted_cluster || 0;
+                return clusterColors[cluster] || clusterColors[0];
+            } else {
+                // Use price-based colors (bullish/bearish)
+                if (data.close > data.open) {
+                    return defaultColors.bullish;
+                } else if (data.close < data.open) {
+                    return defaultColors.bearish;
+                } else {
+                    return defaultColors.neutral;
+                }
+            }
+        }
         
         // Initialize the application
         function init() {
@@ -714,8 +748,7 @@
             // Draw candlesticks
             filteredData.forEach((data, i) => {
                 const x = chartArea.x + i * xStep + xStep / 2;
-                const cluster = data.predicted_cluster || 0;
-                const color = clusterColors[cluster] || clusterColors[0];
+                const color = getDataColor(data);
                 
                 drawCandlestick(
                     x, 
@@ -771,8 +804,7 @@
             
             // Draw scatter points
             filteredData.forEach((data, i) => {
-                const cluster = data.predicted_cluster || 0;
-                const color = clusterColors[cluster] || clusterColors[0];
+                const color = getDataColor(data);
                 
                 const x = chartArea.x + ((data[xAxis] - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
                 const y = chartArea.y + chartArea.height - ((data[yAxis] - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
@@ -799,6 +831,7 @@
         function drawLineChart() {
             const xAxis = document.getElementById('xAxis').value;
             const yAxis = document.getElementById('yAxis').value;
+            const showClusterColors = document.getElementById('showClusterColors').checked;
             
             // Get data for x and y axes
             const xData = filteredData.map(d => d[xAxis]);
@@ -817,34 +850,67 @@
             // Draw grid
             drawCustomGrid(minX - xPadding, maxX + xPadding, minY - yPadding, maxY + yPadding);
             
-            // Group data by cluster for different colored lines
-            const clusterGroups = {};
-            filteredData.forEach((data, i) => {
-                const cluster = data.predicted_cluster || 0;
-                if (!clusterGroups[cluster]) {
-                    clusterGroups[cluster] = [];
-                }
-                clusterGroups[cluster].push({
-                    x: data[xAxis],
-                    y: data[yAxis],
-                    index: i
+            if (showClusterColors) {
+                // Group data by cluster for different colored lines
+                const clusterGroups = {};
+                filteredData.forEach((data, i) => {
+                    const cluster = data.predicted_cluster || 0;
+                    if (!clusterGroups[cluster]) {
+                        clusterGroups[cluster] = [];
+                    }
+                    clusterGroups[cluster].push({
+                        x: data[xAxis],
+                        y: data[yAxis],
+                        index: i
+                    });
                 });
-            });
-            
-            // Draw lines for each cluster
-            Object.keys(clusterGroups).forEach(cluster => {
-                const group = clusterGroups[cluster];
-                const color = clusterColors[cluster] || clusterColors[0];
                 
-                ctx.strokeStyle = color.main;
+                // Draw lines for each cluster
+                Object.keys(clusterGroups).forEach(cluster => {
+                    const group = clusterGroups[cluster];
+                    const color = clusterColors[cluster] || clusterColors[0];
+                    
+                    ctx.strokeStyle = color.main;
+                    ctx.lineWidth = 4;
+                    ctx.shadowColor = color.shadow;
+                    ctx.shadowBlur = 10;
+                    
+                    ctx.beginPath();
+                    group.forEach((point, i) => {
+                        const x = chartArea.x + ((point.x - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
+                        const y = chartArea.y + chartArea.height - ((point.y - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
+                        
+                        if (i === 0) {
+                            ctx.moveTo(x, y);
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                    });
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                    
+                    // Draw points
+                    group.forEach(point => {
+                        const x = chartArea.x + ((point.x - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
+                        const y = chartArea.y + chartArea.height - ((point.y - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
+                        
+                        ctx.fillStyle = color.main;
+                        ctx.beginPath();
+                        ctx.arc(x, y, 6, 0, 2 * Math.PI);
+                        ctx.fill();
+                    });
+                });
+            } else {
+                // Draw single line with price-based coloring
+                ctx.strokeStyle = '#4ecdc4';
                 ctx.lineWidth = 4;
-                ctx.shadowColor = color.shadow;
+                ctx.shadowColor = 'rgba(78, 205, 196, 0.3)';
                 ctx.shadowBlur = 10;
                 
                 ctx.beginPath();
-                group.forEach((point, i) => {
-                    const x = chartArea.x + ((point.x - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
-                    const y = chartArea.y + chartArea.height - ((point.y - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
+                filteredData.forEach((data, i) => {
+                    const x = chartArea.x + ((data[xAxis] - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
+                    const y = chartArea.y + chartArea.height - ((data[yAxis] - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
                     
                     if (i === 0) {
                         ctx.moveTo(x, y);
@@ -855,17 +921,18 @@
                 ctx.stroke();
                 ctx.shadowBlur = 0;
                 
-                // Draw points
-                group.forEach(point => {
-                    const x = chartArea.x + ((point.x - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
-                    const y = chartArea.y + chartArea.height - ((point.y - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
+                // Draw points with individual colors
+                filteredData.forEach((data, i) => {
+                    const x = chartArea.x + ((data[xAxis] - minX + xPadding) / (xRange + 2 * xPadding)) * chartArea.width;
+                    const y = chartArea.y + chartArea.height - ((data[yAxis] - minY + yPadding) / (yRange + 2 * yPadding)) * chartArea.height;
+                    const color = getDataColor(data);
                     
                     ctx.fillStyle = color.main;
                     ctx.beginPath();
                     ctx.arc(x, y, 6, 0, 2 * Math.PI);
                     ctx.fill();
                 });
-            });
+            }
             
             // Draw axes labels
             drawCustomAxes(minX - xPadding, maxX + xPadding, minY - yPadding, maxY + yPadding, xAxis, yAxis);
@@ -873,6 +940,7 @@
         
         function drawHistogramChart() {
             const feature = document.getElementById('histogramFeature').value;
+            const showClusterColors = document.getElementById('showClusterColors').checked;
             const data = filteredData.map(d => d[feature]);
             
             const minValue = Math.min(...data);
@@ -894,7 +962,7 @@
                 }
                 binData[binIndex].push({
                     value: value,
-                    cluster: filteredData[i].predicted_cluster || 0
+                    data: filteredData[i]
                 });
             });
             
@@ -909,29 +977,74 @@
                 const height = (count / maxCount) * chartArea.height;
                 const y = chartArea.y + chartArea.height - height;
                 
-                // Calculate cluster distribution for this bin
-                const clusterCounts = {};
-                binData[binIndex].forEach(item => {
-                    clusterCounts[item.cluster] = (clusterCounts[item.cluster] || 0) + 1;
-                });
-                
-                // Draw stacked bars for each cluster
-                let currentY = y;
-                Object.keys(clusterCounts).forEach(cluster => {
-                    const clusterCount = clusterCounts[cluster];
-                    const clusterHeight = (clusterCount / count) * height;
-                    const color = clusterColors[cluster] || clusterColors[0];
+                if (showClusterColors) {
+                    // Calculate cluster distribution for this bin
+                    const clusterCounts = {};
+                    binData[binIndex].forEach(item => {
+                        const cluster = item.data.predicted_cluster || 0;
+                        clusterCounts[cluster] = (clusterCounts[cluster] || 0) + 1;
+                    });
                     
-                    ctx.fillStyle = color.main;
-                    ctx.fillRect(x, currentY, barWidth * 0.8, clusterHeight);
+                    // Draw stacked bars for each cluster
+                    let currentY = y;
+                    Object.keys(clusterCounts).forEach(cluster => {
+                        const clusterCount = clusterCounts[cluster];
+                        const clusterHeight = (clusterCount / count) * height;
+                        const color = clusterColors[cluster] || clusterColors[0];
+                        
+                        ctx.fillStyle = color.main;
+                        ctx.fillRect(x, currentY, barWidth * 0.8, clusterHeight);
+                        
+                        // Add border
+                        ctx.strokeStyle = color.main;
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(x, currentY, barWidth * 0.8, clusterHeight);
+                        
+                        currentY += clusterHeight;
+                    });
+                } else {
+                    // Draw single color bars based on price movement
+                    const bullishCount = binData[binIndex].filter(item => item.data.close > item.data.open).length;
+                    const bearishCount = binData[binIndex].filter(item => item.data.close < item.data.open).length;
+                    const dojiCount = binData[binIndex].filter(item => item.data.close === item.data.open).length;
                     
-                    // Add border
-                    ctx.strokeStyle = color.main;
-                    ctx.lineWidth = 2;
-                    ctx.strokeRect(x, currentY, barWidth * 0.8, clusterHeight);
+                    let currentY = y;
                     
-                    currentY += clusterHeight;
-                });
+                    // Draw bullish portion
+                    if (bullishCount > 0) {
+                        const bullishHeight = (bullishCount / count) * height;
+                        const color = defaultColors.bullish;
+                        ctx.fillStyle = color.main;
+                        ctx.fillRect(x, currentY, barWidth * 0.8, bullishHeight);
+                        ctx.strokeStyle = color.main;
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(x, currentY, barWidth * 0.8, bullishHeight);
+                        currentY += bullishHeight;
+                    }
+                    
+                    // Draw bearish portion
+                    if (bearishCount > 0) {
+                        const bearishHeight = (bearishCount / count) * height;
+                        const color = defaultColors.bearish;
+                        ctx.fillStyle = color.main;
+                        ctx.fillRect(x, currentY, barWidth * 0.8, bearishHeight);
+                        ctx.strokeStyle = color.main;
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(x, currentY, barWidth * 0.8, bearishHeight);
+                        currentY += bearishHeight;
+                    }
+                    
+                    // Draw doji portion
+                    if (dojiCount > 0) {
+                        const dojiHeight = (dojiCount / count) * height;
+                        const color = defaultColors.neutral;
+                        ctx.fillStyle = color.main;
+                        ctx.fillRect(x, currentY, barWidth * 0.8, dojiHeight);
+                        ctx.strokeStyle = color.main;
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(x, currentY, barWidth * 0.8, dojiHeight);
+                    }
+                }
             });
             
             // Draw axes labels
@@ -1128,21 +1241,60 @@
             
             if (filteredData.length === 0) return;
             
-            // Get unique clusters from current data
-            const uniqueClusters = [...new Set(filteredData.map(d => d.predicted_cluster || 0))].sort();
+            const showClusterColors = document.getElementById('showClusterColors').checked;
             
-            uniqueClusters.forEach(cluster => {
-                const color = clusterColors[cluster] || clusterColors[0];
-                const count = filteredData.filter(d => (d.predicted_cluster || 0) === cluster).length;
+            if (showClusterColors) {
+                // Show cluster information
+                const uniqueClusters = [...new Set(filteredData.map(d => d.predicted_cluster || 0))].sort();
                 
-                const item = document.createElement('div');
-                item.className = 'legend-item';
-                item.innerHTML = `
-                    <div class="legend-color" style="background-color: ${color.main}"></div>
-                    <span>Cluster ${cluster} (${count} points)</span>
-                `;
-                legend.appendChild(item);
-            });
+                uniqueClusters.forEach(cluster => {
+                    const color = clusterColors[cluster] || clusterColors[0];
+                    const count = filteredData.filter(d => (d.predicted_cluster || 0) === cluster).length;
+                    
+                    const item = document.createElement('div');
+                    item.className = 'legend-item';
+                    item.innerHTML = `
+                        <div class="legend-color" style="background-color: ${color.main}"></div>
+                        <span>Cluster ${cluster} (${count} points)</span>
+                    `;
+                    legend.appendChild(item);
+                });
+            } else {
+                // Show price-based color information
+                const bullishCount = filteredData.filter(d => d.close > d.open).length;
+                const bearishCount = filteredData.filter(d => d.close < d.open).length;
+                const dojiCount = filteredData.filter(d => d.close === d.open).length;
+                
+                if (bullishCount > 0) {
+                    const item = document.createElement('div');
+                    item.className = 'legend-item';
+                    item.innerHTML = `
+                        <div class="legend-color" style="background-color: ${defaultColors.bullish.main}"></div>
+                        <span>Bullish (${bullishCount} candles)</span>
+                    `;
+                    legend.appendChild(item);
+                }
+                
+                if (bearishCount > 0) {
+                    const item = document.createElement('div');
+                    item.className = 'legend-item';
+                    item.innerHTML = `
+                        <div class="legend-color" style="background-color: ${defaultColors.bearish.main}"></div>
+                        <span>Bearish (${bearishCount} candles)</span>
+                    `;
+                    legend.appendChild(item);
+                }
+                
+                if (dojiCount > 0) {
+                    const item = document.createElement('div');
+                    item.className = 'legend-item';
+                    item.innerHTML = `
+                        <div class="legend-color" style="background-color: ${defaultColors.neutral.main}"></div>
+                        <span>Doji (${dojiCount} candles)</span>
+                    `;
+                    legend.appendChild(item);
+                }
+            }
             
             // Add candle type information if filter is applied
             const candleTypeFilter = document.getElementById('candleTypeFilter').value;
