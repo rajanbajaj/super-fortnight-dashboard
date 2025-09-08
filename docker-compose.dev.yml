@@ -9,4 +9,6 @@ services:
     restart: unless-stopped
     volumes:
       - ./Dashboard.html:/usr/share/nginx/html/index.html:ro
+      - ./dashboard.js:/usr/share/nginx/html/dashboard.js:ro
+      - ./styles.css:/usr/share/nginx/html/styles.css:ro
     command: ["nginx", "-g", "daemon off;"]
